@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "spark-cluster-optimiser"
+version = "0.1.0"
+description = "Optimizes AWS EMR instance selection for Spark jobs."
+authors = ["Amar Prakash Pandey <@amarlearning>"]
+readme = "README.md"
+packages = [{include = "spark_cluster_optimiser"}]
+
+[tool.poetry.dependencies]
+python = "^3.10.14"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
