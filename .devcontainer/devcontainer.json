@@ -1,0 +1,19 @@
+{
+    "name": "Spark Cluster Optimiser",
+    "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu",
+    "features": {
+        "python": "3.10.14"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python"
+            ]
+        },
+        "settings": {
+            "terminal.integrated.shell.linux": "/bin/bash"
+        }
+    },
+    "postCreateCommand": "pip install poetry",
+    "remoteUser": "vscode"
+}
