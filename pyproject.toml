@@ -8,10 +8,21 @@ packages = [{include = "spark_cluster_optimiser"}]
 
 [tool.poetry.dependencies]
 python = "^3.10.14"
-
+requests = "^2.32.3"
+diskcache = "^5.6.3"
+appdirs = "^1.4.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
+black = "^23.1.0"
+isort = "^5.10.1"
+
+[tool.black]
+line-length = 80
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
 
 [build-system]
 requires = ["poetry-core"]
