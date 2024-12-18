@@ -2,7 +2,7 @@
 
 ## Overview
 
-This Python library helps users select the best AWS EMR instance configurations for their Spark jobs based on resource requirements such as cores, RAM, storage type (SSD), instance architecture (x86 or ARM), and EMR version compatibility. The library also allows users to optimize for fewer nodes (low latency), more nodes (fault tolerance), or balanced configurations.
+This Python library helps users select the best AWS EMR instance configurations for their Spark jobs based on resource requirements such as cores, RAM, storage type (SSD), instance architecture (x86 or ARM), and EMR version compatibility. The library also allows users to optimize for fewer nodes (low latency), more nodes (fault tolerance), or balanced configurations, while selecting instances with the lowest spot interruption rates.
 
 It ensures that the selected configuration meets or exceeds the user’s requirements. For example, if you request 20 cores and 100GB of RAM, the library will suggest a configuration with at least those resources, rounding up to the nearest available configuration.
 
@@ -14,6 +14,7 @@ It ensures that the selected configuration meets or exceeds the user’s require
 2. **Optimization**: Suggest instance types and counts tailored to user preferences (latency, fault tolerance, or balanced configurations).
 3. **Flexibility**: Support various filters such as SSD storage, ARM architecture, and EMR version compatibility.
 4. **Scalability**: Handle diverse Spark workloads with varying resource needs.
+5. **Reliability**: Prioritize instance types with the lowest spot interruption rates.
 
 ---
 
