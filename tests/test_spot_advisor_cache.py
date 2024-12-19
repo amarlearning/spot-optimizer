@@ -77,9 +77,9 @@ def test_get_spot_advisor_json_fetch_failure(mock_cache, mock_requests_get):
     mock_cache.get.return_value = None
     mock_requests_get.return_value = MagicMock(status_code=400)
 
-    with pytest.raises(requests.exceptions.HTTPError):
-        get_spot_advisor_json()
+    data = get_spot_advisor_json()
 
+    assert data is None
     mock_cache.set.assert_not_called()
     mock_requests_get.assert_called_once_with(
         "https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json"
