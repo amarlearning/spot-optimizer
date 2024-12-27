@@ -4,83 +4,81 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from spark_cluster_optimiser.spot_advisor_cache import (
-    clear_cache,
-    get_spot_advisor_json,
-)
+from spark_cluster_optimiser.spot_advisor_cache import AwsSpotAdvisorData
+
+SAMPLE_SPOT_ADVISOR_DATA = {
+    "global_rate": "<10%",
+    "instance_types": {
+        "i4i.12xlarge": {"emr": True, "cores": 48, "ram_gb": 384.0}
+    },
+    "ranges": [{"index": 0, "label": "<5%", "dots": 0, "max": 5}],
+    "spot_advisor": {
+        "ap-southeast-4": {"Linux": {"i4i.12xlarge": {"s": 70, "r": 4}}}
+    },
+}
 
 
 @pytest.fixture
-def mock_cache():
-    with patch(
-        "spark_cluster_optimiser.spot_advisor_cache.cache", autospec=True
-    ) as mock_cache:
-        yield mock_cache
+def mock_response():
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = SAMPLE_SPOT_ADVISOR_DATA
+    return mock_resp
 
 
-@pytest.fixture
-def mock_requests_get():
-    with patch("requests.get") as mock_get:
-        yield mock_get
+@patch("requests.get")
+def test_fetch_from_source_success(mock_get, mock_response):
+    mock_get.return_value = mock_response
+    advisor = AwsSpotAdvisorData()
+    data = advisor._fetch_from_source()
+    assert data == SAMPLE_SPOT_ADVISOR_DATA
 
 
-def test_get_spot_advisor_json_cached(mock_cache):
-    mock_cache.get.return_value = {
-        "data": {"key": "value"},
-        "timestamp": time.time(),
-    }
-    result = get_spot_advisor_json()
+@patch("requests.get")
+def test_fetch_from_source_failure(mock_get):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 404
+    mock_resp.text = "Not Found"
+    mock_get.return_value = mock_resp
+    advisor = AwsSpotAdvisorData()
+    with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+        advisor._fetch_from_source()
 
-    assert result == {"key": "value"}
-    mock_cache.get.assert_called_once_with("spot_advisor_json", default=None)
-
-
-def test_clear_cache(mock_cache):
-    clear_cache()
-    mock_cache.clear.assert_called_once()
-
-
-def test_get_spot_advisor_json_not_cached(mock_cache, mock_requests_get):
-    mock_cache.get.return_value = None
-    mock_requests_get.return_value = MagicMock(
-        status_code=200, json=lambda: {"key": "value"}
-    )
-
-    result = get_spot_advisor_json()
-
-    assert result == {"key": "value"}
-    mock_cache.set.assert_called_once()
-    mock_requests_get.assert_called_once_with(
-        "https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json"
+    assert (
+        str(excinfo.value)
+        == "Received status code 404 from https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json"
     )
 
 
-def test_get_spot_advisor_json_expired_cache(mock_cache, mock_requests_get):
-    mock_cache.get.return_value = {
-        "data": {"key": "value"},
-        "timestamp": time.time() - 7200,  # 2 hours ago
-    }
-    mock_requests_get.return_value = MagicMock(
-        status_code=200, json=lambda: {"key": "new_value"}
-    )
-
-    result = get_spot_advisor_json()
-
-    assert result == {"key": "new_value"}
-    mock_cache.set.assert_called_once()
-    mock_requests_get.assert_called_once_with(
-        "https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json"
-    )
+@patch("requests.get")
+def test_fetch_data_with_cache(mock_get, mock_response):
+    mock_get.return_value = mock_response
+    advisor = AwsSpotAdvisorData()
+    advisor.cache = {"cached": "data"}
+    advisor.last_fetch_time = time.time()
+    data = advisor.fetch_data()
+    assert data == {"cached": "data"}
 
 
-def test_get_spot_advisor_json_fetch_failure(mock_cache, mock_requests_get):
-    mock_cache.get.return_value = None
-    mock_requests_get.return_value = MagicMock(status_code=400)
+@patch("requests.get")
+def test_fetch_data_without_cache(mock_get, mock_response):
+    mock_get.return_value = mock_response
+    advisor = AwsSpotAdvisorData()
+    advisor.cache = None
+    advisor.last_fetch_time = 0
+    data = advisor.fetch_data()
+    assert data == SAMPLE_SPOT_ADVISOR_DATA
+    assert advisor.cache == SAMPLE_SPOT_ADVISOR_DATA
+    assert advisor.last_fetch_time > 0
 
-    data = get_spot_advisor_json()
 
-    assert data is None
-    mock_cache.set.assert_not_called()
-    mock_requests_get.assert_called_once_with(
-        "https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json"
-    )
+@patch("requests.get")
+def test_fetch_data_cache_expired(mock_get, mock_response):
+    mock_get.return_value = mock_response
+    advisor = AwsSpotAdvisorData()
+    advisor.cache = {"cached": "data"}
+    advisor.last_fetch_time = time.time() - 4000  # Cache expired
+    data = advisor.fetch_data()
+    assert data == SAMPLE_SPOT_ADVISOR_DATA
+    assert advisor.cache == SAMPLE_SPOT_ADVISOR_DATA
+    assert advisor.last_fetch_time > 0

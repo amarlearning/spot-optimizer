@@ -1,59 +1,59 @@
 import logging
 import time
 
-import diskcache as dc
 import requests
-from appdirs import user_cache_dir
 
-CACHE_EXPIRATION = 3600  # 1 hour
-SPOT_ADVISOR_URL = (
-    "https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json"
-)
-
-cache_dir = user_cache_dir(appname="spark-cluster-optimiser")
-cache = dc.Cache(cache_dir)
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-def fetch_spot_advisor_json():
-    """Fetch the Spot Advisor JSON data from the URL."""
-    response = requests.get(SPOT_ADVISOR_URL)
-    if response.status_code != 200:
-        raise requests.exceptions.HTTPError(
-            f"Received status code {response.status_code} from {SPOT_ADVISOR_URL}"
-        )
-    return response.json()
+CACHE_EXPIRY_DEFAULT = 3600  # 1 hour
 
 
-def get_spot_advisor_json():
-    """Get the Spot Advisor JSON data, either from cache or by fetching it."""
-    cached_data = cache.get("spot_advisor_json", default=None)
-
-    if (
-        cached_data is not None
-        and time.time() - cached_data["timestamp"] < CACHE_EXPIRATION
+class AwsSpotAdvisorData:
+    def __init__(
+        self,
+        url: str = "https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json",
+        cache_expiry: int = CACHE_EXPIRY_DEFAULT,
     ):
-        logger.info("Cache hit: Returning cached data.")
-        return cached_data["data"]
-    else:
-        logger.info("Cache miss: Fetching new data.")
-        clear_cache()
-        try:
-            data = fetch_spot_advisor_json()
-            cache.set(
-                "spot_advisor_json",
-                {"data": data, "timestamp": time.time()},
-                expire=CACHE_EXPIRATION,
+        """
+        :param url: The URL to fetch JSON data from.
+        :param cache_expiry: Cache expiry time in seconds (default: 1 hour).
+        """
+        self.cache = None
+        self.last_fetch_time = 0
+        self.cache_expiry = cache_expiry
+        self.url = url
+
+    def _fetch_from_source(self) -> dict:
+        """
+        Fetch the Spot Advisor JSON data from the URL.
+        """
+        response = requests.get(self.url)
+        if response.status_code != 200:
+            message = (
+                f"Received status code {response.status_code} from {self.url}"
             )
-            return data
-        except requests.RequestException as e:
-            logger.error(f"Failed to fetch Spot Advisor JSON data: {e}")
-            return None
+            logger.error(
+                message,
+                extra={"response": response.text},
+            )
+            raise requests.exceptions.HTTPError(
+                message,
+                response=response,
+            )
+        return response.json()
 
-
-def clear_cache():
-    """Clear the cache."""
-    logger.info("Clearing cache.")
-    cache.clear()
+    def fetch_data(self) -> dict:
+        """
+        Fetches data from the cache if valid, otherwise fetches fresh data.
+        """
+        current_time = time.time()
+        if (
+            self.cache is None
+            or (current_time - self.last_fetch_time) > self.cache_expiry
+        ):
+            logger.info("Fetching fresh data...")
+            self.cache = self._fetch_from_source()
+            self.last_fetch_time = current_time
+        else:
+            logger.info("Using cached data.")
+        return self.cache
