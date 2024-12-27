@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from spark_cluster_optimiser.spot_advisor_cache import AwsSpotAdvisorData
+from spark_cluster_optimiser.aws_spot_advisor_cache import AwsSpotAdvisorData
 
 SAMPLE_SPOT_ADVISOR_DATA = {
     "global_rate": "<10%",

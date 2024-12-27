@@ -17,6 +17,7 @@ pytest = "^8.3.4"
 black = "^23.1.0"
 isort = "^5.10.1"
 pre-commit = "^4.0.1"
+types-requests = "^2.32.0.20241016"
 
 [tool.black]
 line-length = 80
