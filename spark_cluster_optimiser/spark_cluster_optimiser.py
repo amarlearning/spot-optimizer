@@ -30,4 +30,20 @@ def cluster_optimiser(
     :return: The number of instances required to meet the specified core and memory requirements.
     """
 
+    # try:
+    #     spot_advisor_data_instance = AwsSpotAdvisorData(cache_expiry=3600)
+    #     db_instance = DuckDBStorage(db_path="spot_advisor_data.db")
+    #     fetch_and_store_spot_data(spot_advisor_data_instance, db_instance)
+
+    #     print(db_instance.query_data("SELECT * FROM global_rate LIMIT 1"))
+    #     print(db_instance.query_data("SELECT * FROM cache_timestamp LIMIT 1"))
+    #     print(db_instance.query_data("SELECT * FROM instance_types LIMIT 1"))
+    #     print(db_instance.query_data("SELECT * FROM ranges LIMIT 1"))
+
+    # except Exception as e:
+    #     logger.error(
+    #         f"An error occurred during finding optimized cluster : {e}"
+    #     )
+    #     raise
+
     return 6

@@ -123,6 +123,34 @@ The function returns a dictionary containing the suggested instance type, node c
 
 ---
 
+# Development 
+
+- Use `poetry run` to trigger the `cluster-optimiser` funtion and do testing.
+- It accepts various filter params as mentioned in [cli.py](spark_cluster_optimiser/cli.py)
+- Sample commands are:
+
+  ```shell
+  poetry run cluster-optimiser --cores 16 --memory 64
+  ```
+
+  ```shell
+  poetry run cluster-optimiser --cores 16 --memory 64 --region us-west-2 --ssd-only --arm-instances --emr-version 6.10.0 --mode balanced
+  ```
+
+- Pre-commit has been setup on this project.
+- Use the following command to trigger pre-commits checks manually.
+  ```shell
+  poetry run pre-commit
+  ```
+
+---
+
+# Performance Optimisations
+
+- Only updates intance interuption table every hour and not the whole data like ranges, intance types since they don't change often.
+
+---
+
 ## Issues
 
 If you encounter any bugs, please report them on the [issue tracker](https://github.com/amarlearning/spark-cluster-optimiser/issues).

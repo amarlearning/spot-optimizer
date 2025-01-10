@@ -45,6 +45,24 @@ class DuckDBStorage(StorageEngine):
             [data["global_rate"]],
         )
 
+        instance_data = [
+            (key, value["cores"], value["ram_gb"], value["emr"])
+            for key, value in data["instance_types"].items()
+        ]
+        self.conn.executemany(
+            """INSERT INTO instance_types (instance_types, cores, ram_gb, emr) VALUES (?, ?, ?, ?)""",
+            instance_data,
+        )
+
+        ranges_data = [
+            (item["index"], item["label"], item["dots"], item["max"])
+            for item in data["ranges"]
+        ]
+        self.conn.executemany(
+            """INSERT INTO ranges (index, label, dots, max) VALUES (?, ?, ?, ?)""",
+            ranges_data,
+        )
+
     def query_data(self, query: str) -> pd.DataFrame:
         """
         Queries the data stored in DuckDB.
