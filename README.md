@@ -21,7 +21,7 @@ It ensures that the selected configuration meets or exceeds the user’s require
 ## Function Signature
 
 ```python
-result = suggest_instances(
+result = cluster_optimiser(
     cores: int,              # Total number of cores required
     ram: int,                # Total amount of RAM required (in GB)
     ssd_only: bool,          # Filter for SSD-backed instances
