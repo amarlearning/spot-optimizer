@@ -34,12 +34,10 @@ def cluster_optimiser(
     :return: The recommended instance configuration that meets the specified requirements.
     """
 
-    try:
+    with DuckDBStorage(db_path="spot_advisor_data.db") as db_instance:
         spot_advisor_data_instance = AwsSpotAdvisorData(cache_expiry=3600)
-        db_instance = DuckDBStorage(db_path="spot_advisor_data.db")
         fetch_and_store_spot_data(spot_advisor_data_instance, db_instance)
 
-        # Build the query based on requirements
         query = """
             SELECT * FROM instance_types 
             WHERE cores >= ? AND ram_gb >= ?
@@ -70,9 +68,6 @@ def cluster_optimiser(
             params.extend([cores, memory])
 
         query += " LIMIT 1"
-        
-        logger.info(f"Query: {query}")
-        logger.info(f"Params: {params}")
 
         result = db_instance.query_data(query, params)
         
@@ -98,9 +93,3 @@ def cluster_optimiser(
             "total_cores": total_cores,
             "total_ram": total_ram
         }
-
-    except Exception as e:
-        logger.error(
-            f"An error occurred during finding optimized instances: {e}"
-        )
-        raise e
