@@ -3,7 +3,7 @@
 # Variables
 PYTHON = poetry run python
 PYTEST = poetry run pytest
-COVERAGE_THRESHOLD = 75
+COVERAGE_THRESHOLD = 85
 PACKAGE_NAME = spot_optimizer
 
 # Default target
