@@ -23,17 +23,77 @@ It ensures that the selected configuration meets or exceeds the user's requireme
 
 ---
 
-## Function Signature
+## Installation
+
+### For Users
+```bash
+pip install spot-optimizer
+```
+
+### For Development
+```bash
+# Clone the repository
+git clone git@github.com:amarlearning/spot-optimizer.git
+cd spot-optimizer
+
+# Install dependencies and set up development environment
+make install
+```
+
+---
+
+## Usage
+
+### API Usage
 
 ```python
-result = cluster_optimiser(
-    cores: int,              # Total number of cores required
-    ram: int,                # Total amount of RAM required (in GB)
-    ssd_only: bool,          # Filter for SSD-backed instances
-    arm_instances: bool,     # Include ARM-based instances if True
-    emr_version: str,        # EMR version compatibility filter (e.g., "6.10.0")
-    mode: str = "latency"    # Optimization mode: "latency", "fault_tolerance", or "balanced"
+from spot_optimizer import optimize
+
+# Basic usage
+result = optimize(cores=8, memory=32)
+
+# Advanced usage with all options
+result = optimize(
+    cores=8,
+    memory=32,
+    region="us-east-1",
+    ssd_only=True,
+    arm_instances=False,
+    instance_family=["m6i", "r6i"],
+    mode="balanced"
 )
+
+print(result)
+# Output:
+# {
+#     "instances": {
+#         "type": "m6i.2xlarge",
+#         "count": 1
+#     },
+#     "mode": "balanced",
+#     "total_cores": 8,
+#     "total_ram": 32
+# }
+```
+
+### CLI Usage
+
+```bash
+# Basic usage
+spot-optimizer optimize --cores 8 --memory 32
+
+# Advanced usage
+spot-optimizer optimize \
+    --cores 8 \
+    --memory 32 \
+    --region us-east-1 \
+    --ssd-only \
+    --no-arm \
+    --instance-family m6i r6i \
+    --mode balanced
+
+# Get help
+spot-optimizer --help
 ```
 
 ---
@@ -58,64 +118,6 @@ result = cluster_optimiser(
 
 ---
 
-## Outputs
-
-The function returns a dictionary containing the suggested instance type, node count, and additional metadata.
-
-### Example Output
-
-#### Case 1: `mode="latency"`
-
-```json
-{
-  "instances": {
-    "type": "r5.8xlarge",   # Suggested instance type
-    "count": 5               # Number of instances needed
-  },
-  "mode": "latency",         # Optimization mode used
-  "total_cores": 80,          # Total cores available in the cluster
-  "total_ram": 512            # Total RAM available in the cluster (in GB)
-}
-```
-
-#### Case 2: `mode="fault_tolerance"`
-
-```json
-{
-  "instances": {
-    "type": "r5.xlarge",    # Suggested instance type
-    "count": 40              # Number of instances needed
-  },
-  "mode": "fault_tolerance", # Optimization mode used
-  "total_cores": 80,          # Total cores available in the cluster
-  "total_ram": 480            # Total RAM available in the cluster (in GB)
-}
-```
-
-#### Case 3: `mode="balanced"`
-
-```json
-{
-  "instances": {
-    "type": "r5.4xlarge",   # Suggested instance type
-    "count": 10              # Number of instances needed
-  },
-  "mode": "balanced",        # Optimization mode used
-  "total_cores": 80,          # Total cores available in the cluster
-  "total_ram": 512            # Total RAM available in the cluster (in GB)
-}
-```
-
-#### Error Case: No Suitable Instances Found
-
-```json
-{
-  "error": "No suitable instance type found."
-}
-```
-
----
-
 ## Future Enhancements
 
 1. **Cost Optimization**:
@@ -129,25 +131,23 @@ The function returns a dictionary containing the suggested instance type, node c
 
 ---
 
-# Development 
+## Development
 
-- Use `poetry run` to trigger the `cluster-optimiser` funtion and do testing.
-- It accepts various filter params as mentioned in [cli.py](spark_cluster_optimiser/cli.py)
-- Sample commands are:
+### Make Commands
 
-  ```shell
-  poetry run cluster-optimiser --cores 16 --memory 64
-  ```
+```bash
+# Install dependencies
+make install
 
-  ```shell
-  poetry run cluster-optimiser --cores 16 --memory 64 --region us-west-2 --ssd-only --arm-instances --emr-version 6.10.0 --mode balanced
-  ```
+# Run tests
+make test
 
-- Pre-commit has been setup on this project.
-- Use the following command to trigger pre-commits checks manually.
-  ```shell
-  poetry run pre-commit
-  ```
+# Check test coverage
+make coverage
+
+# Clean up build artifacts
+make clean
+```
 
 ---
 
