@@ -7,7 +7,7 @@ from spot_optimizer.cli import main, parse_args
 @pytest.fixture
 def mock_spot_optimiser():
     """Mock the spot_optimiser function."""
-    with patch('spot_optimizer.cli.spot_optimiser') as mock:
+    with patch('spot_optimizer.cli.optimize') as mock:
         mock.return_value = {
             "instances": {
                 "type": "m5.xlarge",

@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from spot_optimizer.spot_advisor_engine import (
     should_refresh_data,
