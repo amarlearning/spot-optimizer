@@ -1,13 +1,15 @@
 # Spot Optimizer
 
-This Python library helps users select the best AWS spot instances based on their resource requirements such as cores, RAM, storage type (SSD), and instance architecture (x86 or ARM). The library optimizes for various use cases including but not limited to:
+[![Python Tests](https://github.com/amarlearning/spot-optimizer/actions/workflows/python-tests.yml/badge.svg)](https://github.com/amarlearning/spot-optimizer/actions/workflows/python-tests.yml)
+
+This Python library helps users select the best AWS spot instances based on their resource requirements such as cores, RAM, storage type (SSD), and instance architecture (x86 or ARM). The library optimizes for various use cases, including but not limited to:
 - Spark/EMR clusters
 - Machine Learning workloads
 - Gaming servers
 - General compute workloads
 - Containerized applications
 
-It allows users to optimize for fewer nodes (low latency), more nodes (fault tolerance), or balanced configurations, while selecting instances with the lowest spot interruption rates.
+It allows users to optimize for fewer nodes (low latency), more nodes (fault tolerance), or balanced configurations while selecting instances with the lowest spot interruption rates.
 
 It ensures that the selected configuration meets or exceeds the user's requirements. For example, if you request 20 cores and 100GB of RAM, the library will suggest a configuration with at least those resources, rounding up to the nearest available configuration.
 
@@ -114,7 +116,7 @@ spot-optimizer --help
 5. **mode (str)**:
    - **`latency`**: Optimize for fewer, larger nodes (lower latency).
    - **`fault_tolerance`**: Optimize for more, smaller nodes (better fault tolerance).
-   - **`balanced`**: Aim for a middle ground between fewer nodes and more nodes.
+   - **`balanced`**: Aim for a middle ground between fewer and more nodes.
 
 ---
 
@@ -153,7 +155,7 @@ make clean
 
 # Performance Optimisations
 
-- Only updates intance interuption table every hour and not the whole data like ranges, intance types since they don't change often.
+- Updates the instance interruption table only every hour and not the whole data, such as ranges and instance types, since they don't change often.
 
 ---
 
