@@ -104,16 +104,17 @@ spot-optimizer --help
 
 ### Required Parameters
 
-1. **cores (int)**: The total number of CPU cores required by the Spark job.
-2. **ram (int)**: The total amount of memory (in GB) required by the Spark job.
+1. **cores (int)**: The total number of CPU cores required.
+2. **memory (int)**: The total amount of memory required in GB.
 
 ### Optional Parameters
 
-1. **ssd\_only (bool)**: If `True`, only suggest instances with SSD-backed storage.
-2. **arm\_instances (bool)**: If `True`, include ARM-based instances in the recommendations.
-3. **emr\_version (str)**: Optional EMR version to ensure instance compatibility for EMR workloads.
-4. **instance\_family (str)**: Filter by specific instance family (e.g., 'm5', 'c6g', etc.).
-5. **mode (str)**:
+1. **region (str)**: AWS region for spot instance selection (default: "us-west-2").
+2. **ssd_only (bool)**: If `True`, only suggest instances with SSD-backed storage (default: False).
+3. **arm_instances (bool)**: If `True`, include ARM-based instances (default: True).
+4. **instance_family (List[str])**: Filter by specific instance families (e.g., ['m6i', 'r6i']).
+5. **emr_version (str)**: Optional EMR version to ensure instance compatibility.
+6. **mode (str)**:
    - **`latency`**: Optimize for fewer, larger nodes (lower latency).
    - **`fault_tolerance`**: Optimize for more, smaller nodes (better fault tolerance).
    - **`balanced`**: Aim for a middle ground between fewer and more nodes.
