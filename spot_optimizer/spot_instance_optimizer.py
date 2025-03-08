@@ -87,7 +87,7 @@ def cluster_optimiser(
         
         count = int(count)
         total_cores = int(count * instance["cores"])
-        total_ram = float(count * instance["ram_gb"])
+        total_ram = int(count * instance["ram_gb"])
 
         return {
             "instances": {
