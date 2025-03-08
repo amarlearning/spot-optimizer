@@ -124,11 +124,9 @@ spot-optimizer --help
 
 1. **Cost Optimization**:
    - Include estimated instance costs and recommend the most cost-effective configuration.
-2. **Custom Instance Pools**:
-   - Let users specify a custom list of allowed instance types.
-3. **Support for Other Cloud Providers**:
+2. **Support for Other Cloud Providers**:
    - Extend the library to support GCP and Azure instance types.
-4. **Spot Interruption Rates**:
+3. **Spot Interruption Rates**:
    - Include interruption rates in the selection criteria for spot instances.
 
 ---
