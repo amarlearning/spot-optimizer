@@ -20,7 +20,17 @@ class DuckDBStorage(StorageEngine):
         )
         self.conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS instance_types (instance_types VARCHAR,cores INTEGER,ram_gb FLOAT,emr BOOLEAN);"""
+            CREATE TABLE IF NOT EXISTS instance_types (
+                instance_type VARCHAR,
+                instance_family VARCHAR,
+                cores INTEGER,
+                ram_gb FLOAT,
+                storage_type VARCHAR,
+                architecture VARCHAR,
+                network_performance VARCHAR,
+                emr_compatible BOOLEAN DEFAULT FALSE,
+                emr_min_version VARCHAR
+            );"""
         )
         self.conn.execute(
             """
@@ -46,11 +56,25 @@ class DuckDBStorage(StorageEngine):
         )
 
         instance_data = [
-            (key, value["cores"], value["ram_gb"], value["emr"])
+            (
+                key,
+                value.get("instance_family", ""),
+                value["cores"],
+                value["ram_gb"],
+                value.get("storage_type", ""),
+                value.get("architecture", "x86_64"),
+                value.get("network_performance", ""),
+                value.get("emr_compatible", False),
+                value.get("emr_min_version", None)
+            )
             for key, value in data["instance_types"].items()
         ]
         self.conn.executemany(
-            """INSERT INTO instance_types (instance_types, cores, ram_gb, emr) VALUES (?, ?, ?, ?)""",
+            """INSERT INTO instance_types (
+                instance_type, instance_family, cores, ram_gb, 
+                storage_type, architecture, network_performance,
+                emr_compatible, emr_min_version
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             instance_data,
         )
 

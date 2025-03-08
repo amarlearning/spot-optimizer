@@ -1,15 +1,15 @@
 import argparse
 
-from spot_optimizer.spark_cluster_optimiser import cluster_optimiser
+from spot_optimizer.spot_instance_optimizer import cluster_optimiser
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run the cluster optimiser.")
+    parser = argparse.ArgumentParser(description="Run the spot instance optimizer.")
     parser.add_argument(
         "--cores",
         type=int,
         required=True,
-        help="Total number of cores required.",
+        help="Total number of CPU cores required.",
     )
     parser.add_argument(
         "--memory",
@@ -34,10 +34,14 @@ def main():
         help="Include ARM-based instances if True.",
     )
     parser.add_argument(
+        "--instance-family",
+        type=str,
+        help="Filter by instance family (e.g., 'm5', 'c6g', etc.).",
+    )
+    parser.add_argument(
         "--emr-version",
         type=str,
-        default="6.10.0",
-        help='EMR version compatibility filter (e.g., "6.10.0").',
+        help="Optional EMR version for EMR workloads (e.g., '6.10.0').",
     )
     parser.add_argument(
         "--mode",
@@ -55,11 +59,12 @@ def main():
         region=args.region,
         ssd_only=args.ssd_only,
         arm_instances=args.arm_instances,
+        instance_family=args.instance_family,
         emr_version=args.emr_version,
         mode=args.mode,
     )
 
-    print(f"Cluster optimization result: {result}")
+    print(f"Spot instance optimization result: {result}")
 
 
 if __name__ == "__main__":

@@ -1,19 +1,26 @@
-# Spark Cluster Optimiser
+# Spot Optimizer
 
 ## Overview
 
-This Python library helps users select the best AWS EMR instance configurations for their Spark jobs based on resource requirements such as cores, RAM, storage type (SSD), instance architecture (x86 or ARM), and EMR version compatibility. The library also allows users to optimize for fewer nodes (low latency), more nodes (fault tolerance), or balanced configurations, while selecting instances with the lowest spot interruption rates.
+This Python library helps users select the best AWS spot instances based on their resource requirements such as cores, RAM, storage type (SSD), and instance architecture (x86 or ARM). The library optimizes for various use cases including but not limited to:
+- Spark/EMR clusters
+- Machine Learning workloads
+- Gaming servers
+- General compute workloads
+- Containerized applications
 
-It ensures that the selected configuration meets or exceeds the user’s requirements. For example, if you request 20 cores and 100GB of RAM, the library will suggest a configuration with at least those resources, rounding up to the nearest available configuration.
+It allows users to optimize for fewer nodes (low latency), more nodes (fault tolerance), or balanced configurations, while selecting instances with the lowest spot interruption rates.
+
+It ensures that the selected configuration meets or exceeds the user's requirements. For example, if you request 20 cores and 100GB of RAM, the library will suggest a configuration with at least those resources, rounding up to the nearest available configuration.
 
 ---
 
 ## Goals
 
-1. **Ease of Use**: Provide a simple interface to specify job requirements.
+1. **Ease of Use**: Provide a simple interface to specify resource requirements.
 2. **Optimization**: Suggest instance types and counts tailored to user preferences (latency, fault tolerance, or balanced configurations).
-3. **Flexibility**: Support various filters such as SSD storage, ARM architecture, and EMR version compatibility.
-4. **Scalability**: Handle diverse Spark workloads with varying resource needs.
+3. **Flexibility**: Support various filters such as SSD storage, ARM architecture, and optional EMR version compatibility.
+4. **Scalability**: Handle diverse workloads with varying resource needs.
 5. **Reliability**: Prioritize instance types with the lowest spot interruption rates.
 
 ---
@@ -44,8 +51,9 @@ result = cluster_optimiser(
 
 1. **ssd\_only (bool)**: If `True`, only suggest instances with SSD-backed storage.
 2. **arm\_instances (bool)**: If `True`, include ARM-based instances in the recommendations.
-3. **emr\_version (str)**: The EMR version to ensure instance compatibility.
-4. **mode (str)**:
+3. **emr\_version (str)**: Optional EMR version to ensure instance compatibility for EMR workloads.
+4. **instance\_family (str)**: Filter by specific instance family (e.g., 'm5', 'c6g', etc.).
+5. **mode (str)**:
    - **`latency`**: Optimize for fewer, larger nodes (lower latency).
    - **`fault_tolerance`**: Optimize for more, smaller nodes (better fault tolerance).
    - **`balanced`**: Aim for a middle ground between fewer nodes and more nodes.
