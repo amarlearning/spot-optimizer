@@ -87,12 +87,14 @@ class DuckDBStorage(StorageEngine):
             ranges_data,
         )
 
-    def query_data(self, query: str) -> pd.DataFrame:
+    def query_data(self, query: str, params: list = None) -> pd.DataFrame:
         """
         Queries the data stored in DuckDB.
         :param query: SQL query string.
         :return: Query result as a pandas DataFrame.
         """
+        if params:
+            return self.conn.execute(query, params).fetchdf()
         return self.conn.execute(query).fetchdf()
 
     def clear_data(self) -> None:

@@ -16,7 +16,7 @@ def cluster_optimiser(
     region: str = "us-west-2",
     ssd_only: bool = False,
     arm_instances: bool = True,
-    instance_family: str = None,
+    instance_family: list[str] = None,
     emr_version: str = None,
     mode: str = Mode.BALANCED.value,
 ) -> dict:
@@ -28,7 +28,7 @@ def cluster_optimiser(
     :param region: AWS region to find instances in.
     :param ssd_only: Filter for SSD-backed instances.
     :param arm_instances: Include ARM-based instances if True.
-    :param instance_family: Filter by instance family (e.g., 'm5', 'c6g', etc.).
+    :param instance_family: List of instance families (e.g., ['m5', 'c5', 'r5']).
     :param emr_version: Optional EMR version for EMR workloads (e.g., '6.10.0').
     :param mode: Optimization mode: "latency", "fault_tolerance", or "balanced".
     :return: The recommended instance configuration that meets the specified requirements.
@@ -70,6 +70,9 @@ def cluster_optimiser(
             params.extend([cores, memory])
 
         query += " LIMIT 1"
+        
+        logger.info(f"Query: {query}")
+        logger.info(f"Params: {params}")
 
         result = db_instance.query_data(query, params)
         
@@ -81,6 +84,10 @@ def cluster_optimiser(
             cores // instance["cores"],
             int(memory / instance["ram_gb"])
         )
+        
+        count = int(count)
+        total_cores = int(count * instance["cores"])
+        total_ram = float(count * instance["ram_gb"])
 
         return {
             "instances": {
@@ -88,12 +95,12 @@ def cluster_optimiser(
                 "count": count
             },
             "mode": mode,
-            "total_cores": count * instance["cores"],
-            "total_ram": count * instance["ram_gb"]
+            "total_cores": total_cores,
+            "total_ram": total_ram
         }
 
     except Exception as e:
         logger.error(
             f"An error occurred during finding optimized instances: {e}"
         )
-        raise
+        raise e

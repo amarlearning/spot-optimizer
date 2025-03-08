@@ -26,4 +26,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-spot-optimiser = "spot_optimizer.cli:main"
+spot-optimizer = "spot_optimizer.cli:main"

@@ -36,6 +36,7 @@ def main():
     parser.add_argument(
         "--instance-family",
         type=str,
+        nargs="+",
         help="Filter by instance family (e.g., 'm5', 'c6g', etc.).",
     )
     parser.add_argument(
