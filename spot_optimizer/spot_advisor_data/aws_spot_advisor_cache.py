@@ -48,7 +48,7 @@ class AwsSpotAdvisorData:
             dict: The fetched data.
             
         Raises:
-            RequestException: If the request fails after all retries.
+            RequestException: If the request fails after all retries or if JSON parsing fails.
         """
         last_exception = None
         for attempt in range(self.max_retries):
@@ -58,7 +58,10 @@ class AwsSpotAdvisorData:
                     timeout=self.request_timeout
                 )
                 response.raise_for_status()
-                return response.json()
+                try:
+                    return response.json()
+                except ValueError as e:
+                    raise RequestException(f"Failed to parse JSON response: {str(e)}") from e
             except RequestException as e:
                 last_exception = e
                 logger.warning(
