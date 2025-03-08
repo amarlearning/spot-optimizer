@@ -3,17 +3,53 @@ import argparse
 from spot_optimizer.spot_instance_optimizer import cluster_optimiser
 
 
-def main():
+def validate_positive_int(value: str, param_name: str) -> int:
+    """
+    Validate that the value is a positive integer.
+    
+    Args:
+        value: The string value to validate
+        param_name: Name of the parameter for error messages
+    
+    Returns:
+        int: The validated positive integer
+        
+    Raises:
+        ArgumentTypeError: If value is not a positive integer
+    """
+    try:
+        ivalue = int(value)
+        if ivalue <= 0:
+            raise argparse.ArgumentTypeError(
+                f"{param_name} must be greater than 0, got {ivalue}"
+            )
+        return ivalue
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"{param_name} must be an integer, got {value}"
+        )
+
+
+def parse_args(args=None):
+    """
+    Parse command line arguments.
+    
+    Args:
+        args: List of arguments to parse. Defaults to sys.argv[1:] if None.
+    
+    Returns:
+        argparse.Namespace: Parsed command line arguments
+    """
     parser = argparse.ArgumentParser(description="Run the spot instance optimizer.")
     parser.add_argument(
         "--cores",
-        type=int,
+        type=lambda x: validate_positive_int(x, "cores"),
         required=True,
         help="Total number of CPU cores required.",
     )
     parser.add_argument(
         "--memory",
-        type=int,
+        type=lambda x: validate_positive_int(x, "memory"),
         required=True,
         help="Total amount of RAM required (in GB).",
     )
@@ -52,7 +88,12 @@ def main():
         help='Optimization mode: "latency", "fault_tolerance", or "balanced".',
     )
 
-    args = parser.parse_args()
+    return parser.parse_args(args)
+
+
+def main():
+    """Main entry point for the CLI."""
+    args = parse_args()
 
     result = cluster_optimiser(
         cores=args.cores,
