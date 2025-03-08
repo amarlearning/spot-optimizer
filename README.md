@@ -1,7 +1,5 @@
 # Spot Optimizer
 
-## Overview
-
 This Python library helps users select the best AWS spot instances based on their resource requirements such as cores, RAM, storage type (SSD), and instance architecture (x86 or ARM). The library optimizes for various use cases including but not limited to:
 - Spark/EMR clusters
 - Machine Learning workloads
