@@ -1,6 +1,6 @@
 import logging
 
-from spot_optimizer.optimiser_mode import Mode
+from spot_optimizer.optimizer_mode import Mode
 
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
 from spot_optimizer.storage_engine.duckdb_storage import DuckDBStorage
