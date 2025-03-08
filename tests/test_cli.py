@@ -5,9 +5,9 @@ from spot_optimizer.cli import main, parse_args
 
 
 @pytest.fixture
-def mock_cluster_optimiser():
-    """Mock the cluster_optimiser function."""
-    with patch('spot_optimizer.cli.cluster_optimiser') as mock:
+def mock_spot_optimiser():
+    """Mock the spot_optimiser function."""
+    with patch('spot_optimizer.cli.spot_optimiser') as mock:
         mock.return_value = {
             "instances": {
                 "type": "m5.xlarge",
@@ -20,12 +20,12 @@ def mock_cluster_optimiser():
         yield mock
 
 
-def test_cli_required_args(mock_cluster_optimiser, capsys):
+def test_cli_required_args(mock_spot_optimiser, capsys):
     """Test CLI with only required arguments."""
     with patch('sys.argv', ['spot-optimiser', '--cores', '8', '--memory', '32']):
         main()
         
-    mock_cluster_optimiser.assert_called_once_with(
+    mock_spot_optimiser.assert_called_once_with(
         cores=8,
         memory=32,
         region='us-west-2',  # default value
@@ -40,7 +40,7 @@ def test_cli_required_args(mock_cluster_optimiser, capsys):
     assert "Spot instance optimization result" in captured.out
 
 
-def test_cli_all_args(mock_cluster_optimiser, capsys):
+def test_cli_all_args(mock_spot_optimiser, capsys):
     """Test CLI with all arguments specified."""
     with patch('sys.argv', [
         'spot-optimiser',
@@ -55,7 +55,7 @@ def test_cli_all_args(mock_cluster_optimiser, capsys):
     ]):
         main()
         
-    mock_cluster_optimiser.assert_called_once_with(
+    mock_spot_optimiser.assert_called_once_with(
         cores=16,
         memory=64,
         region='us-east-1',
@@ -128,9 +128,9 @@ def test_cli_validation(cores, memory, expected_error):
     
     assert exc_info.value.code == 2
 
-def test_cli_error_handling(mock_cluster_optimiser):
+def test_cli_error_handling(mock_spot_optimiser):
     """Test CLI error handling when optimizer raises an exception."""
-    mock_cluster_optimiser.side_effect = Exception("Optimization failed")
+    mock_spot_optimiser.side_effect = Exception("Optimization failed")
     
     with patch('sys.argv', ['spot-optimiser', '--cores', '8', '--memory', '32']):
         with pytest.raises(Exception, match="Optimization failed"):

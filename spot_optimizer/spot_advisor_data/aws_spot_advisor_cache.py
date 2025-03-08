@@ -1,63 +1,72 @@
 import logging
 import time
+from typing import Optional
+from urllib.parse import urlparse
 
 import requests
+from requests.exceptions import RequestException
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
 logger = logging.getLogger(__name__)
 
-CACHE_EXPIRY_DEFAULT = 3600  # 1 hour
-
-
 class AwsSpotAdvisorData:
+    """Fetches AWS Spot Advisor data."""
+    
     def __init__(
         self,
         url: str = "https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json",
-        cache_expiry: int = CACHE_EXPIRY_DEFAULT,
+        request_timeout: int = 30,
+        max_retries: int = 3,
     ):
         """
-        :param url: The URL to fetch JSON data from.
-        :param cache_expiry: Cache expiry time in seconds (default: 1 hour).
-        """
-        self.cache = None
-        self.last_fetch_time = 0
-        self.cache_expiry = cache_expiry
-        self.url = url
+        Initialize the AWS Spot Advisor data fetcher.
 
-    def _fetch_from_source(self) -> dict:
+        Args:
+            url: The URL to fetch JSON data from.
+            request_timeout: Timeout for HTTP requests in seconds.
+            max_retries: Maximum number of retry attempts for failed requests.
         """
-        Fetch the Spot Advisor JSON data from the URL.
-        """
-        response = requests.get(self.url)
-        if response.status_code != 200:
-            message = (
-                f"Received status code {response.status_code} from {self.url}"
-            )
-            logger.error(
-                message,
-                extra={"response": response.text},
-            )
-            raise requests.exceptions.HTTPError(
-                message,
-                response=response,
-            )
-        return response.json()
+        self._validate_url(url)
+        self.url = url
+        self.request_timeout = request_timeout
+        self.max_retries = max_retries
+
+    @staticmethod
+    def _validate_url(url: str) -> None:
+        """Validate the URL format."""
+        try:
+            result = urlparse(url)
+            if not all([result.scheme, result.netloc]):
+                raise ValueError("Invalid URL format")
+        except Exception as e:
+            raise ValueError(f"Invalid URL: {str(e)}")
 
     def fetch_data(self) -> dict:
         """
-        Fetches data from the cache if valid, otherwise fetches fresh data.
+        Fetch the Spot Advisor data from AWS.
+        
+        Returns:
+            dict: The fetched data.
+            
+        Raises:
+            RequestException: If the request fails after all retries.
         """
-        current_time = time.time()
-        if (
-            self.cache is None
-            or (current_time - self.last_fetch_time) > self.cache_expiry
-        ):
-            logger.info("Fetching fresh data...")
-            self.cache = self._fetch_from_source()
-            self.last_fetch_time = current_time
-        else:
-            logger.info("Using cached data.")
-        return self.cache
+        last_exception = None
+        for attempt in range(self.max_retries):
+            try:
+                response = requests.get(
+                    self.url,
+                    timeout=self.request_timeout
+                )
+                response.raise_for_status()
+                return response.json()
+            except RequestException as e:
+                last_exception = e
+                logger.warning(
+                    f"Attempt {attempt + 1}/{self.max_retries} failed: {str(e)}"
+                )
+                if attempt < self.max_retries - 1:
+                    time.sleep(2 ** attempt)  # Exponential backoff
+                
+        message = f"Failed to fetch data after {self.max_retries} attempts"
+        logger.error(message, exc_info=last_exception)
+        raise RequestException(message) from last_exception

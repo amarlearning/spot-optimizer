@@ -1,1 +1,0 @@
-CACHE_EXPIRY_DEFAULT = 3600  # 1 hour

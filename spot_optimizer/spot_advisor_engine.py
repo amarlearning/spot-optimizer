@@ -1,43 +1,77 @@
 import logging
-import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from spot_optimizer.config import CACHE_EXPIRY_DEFAULT
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
 from spot_optimizer.storage_engine.storage_engine import StorageEngine
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-
 logger = logging.getLogger(__name__)
 
-def fetch_and_store_spot_data(
-    advisor: AwsSpotAdvisorData, db: StorageEngine
-) -> None:
+CACHE_EXPIRY_SECONDS = 3600  # 1 hour
+
+def should_refresh_data(db: StorageEngine) -> bool:
     """
-    Fetch Spot Advisor data if not already present or outdated, and store it in DuckDB.
+    Check if the data needs to be refreshed.
+    
+    Args:
+        db: Database connection
+        
+    Returns:
+        bool: True if data should be refreshed
     """
     try:
-        query = "SELECT timestamp AS last_update FROM cache_timestamp"
-        result = db.query_data(query)
+        result = db.query_data(
+            "SELECT timestamp FROM cache_timestamp ORDER BY timestamp DESC LIMIT 1"
+        )
+        if result.empty:
+            return True
+            
+        last_update = result.iloc[0]['timestamp']
+        time_since_update = (datetime.now() - last_update).total_seconds()
 
-        if not result.empty and result.iloc[0]["last_update"]:
-            last_update = pd.Timestamp(result.iloc[0]["last_update"])
-            if (
-                datetime.now() - last_update
-            ).total_seconds() < CACHE_EXPIRY_DEFAULT:
-                logger.info("Data in storage is up-to-date. Skipping fetch.")
-                print("Data in storage is up-to-date. Skipping fetch.")
-                return
-
-        logger.info("Fetching fresh data from Spot Advisor...")
-        print("Fetching fresh data from Spot Advisor...")
-        db.clear_data()
-        db.store_data(advisor.fetch_data())
+        logger.info(f"Time since last update: {time_since_update} seconds")
+        
+        return time_since_update > CACHE_EXPIRY_SECONDS
     except Exception as e:
-        print(f"Error fetching and storing data: {e}")
-        logger.error(f"Error fetching and storing data: {e}")
+        logger.warning(f"Error checking cache timestamp: {e}")
+        return True
+
+def refresh_spot_data(
+    advisor: AwsSpotAdvisorData,
+    db: StorageEngine
+) -> None:
+    """
+    Fetch fresh data and store in database.
+    
+    Args:
+        advisor: Spot advisor data fetcher
+        db: Database connection
+    """
+    logger.info("Fetching fresh spot advisor data...")
+    data = advisor.fetch_data()
+    
+    # Clear existing data
+    db.clear_data()
+    
+    # Store new data
+    db.store_data(data)
+    logger.info("Spot advisor data updated successfully")
+
+def ensure_fresh_data(
+    advisor: AwsSpotAdvisorData,
+    db: StorageEngine
+) -> None:
+    """
+    Ensure the database has fresh spot advisor data.
+    
+    Args:
+        advisor: Spot advisor data fetcher
+        db: Database connection
+    """
+    try:
+        if should_refresh_data(db):
+            refresh_spot_data(advisor, db)
+        else:
+            logger.info("Using existing spot advisor data from database")
+    except Exception as e:
+        logger.error(f"Error ensuring fresh data: {e}")
         raise

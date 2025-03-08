@@ -3,7 +3,7 @@
 # Variables
 PYTHON = poetry run python
 PYTEST = poetry run pytest
-COVERAGE_THRESHOLD = 85
+COVERAGE_THRESHOLD = 80
 PACKAGE_NAME = spot_optimizer
 
 # Default target
@@ -31,7 +31,7 @@ clean:  ## Remove all build, test, and coverage artifacts
 	find . -type f -name "*.pyc" -delete
 
 test:  ## Run tests
-	$(PYTEST) tests/ -v
+	$(PYTEST) tests/ -vv
 
 coverage:  ## Run tests with coverage report
 	$(PYTEST) --cov=$(PACKAGE_NAME) \

@@ -1,6 +1,6 @@
 import argparse
 
-from spot_optimizer.spot_instance_optimizer import cluster_optimiser
+from spot_optimizer.spot_instance_optimizer import spot_optimiser
 
 
 def validate_positive_int(value: str, param_name: str) -> int:
@@ -95,7 +95,7 @@ def main():
     """Main entry point for the CLI."""
     args = parse_args()
 
-    result = cluster_optimiser(
+    result = spot_optimiser(
         cores=args.cores,
         memory=args.memory,
         region=args.region,
