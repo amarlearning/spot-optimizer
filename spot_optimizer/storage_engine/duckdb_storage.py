@@ -3,7 +3,7 @@ from datetime import datetime
 import duckdb
 import pandas as pd
 
-from spark_cluster_optimiser.storage_engine.storage_engine import StorageEngine
+from spot_optimizer.storage_engine.storage_engine import StorageEngine
 
 
 class DuckDBStorage(StorageEngine):

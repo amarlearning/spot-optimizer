@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "spark-cluster-optimiser"
+name = "spot-optimizer"
 version = "0.1.0"
-description = "Optimizes AWS EMR instance selection for Spark jobs."
+description = "Help you get the best spot instance given the resource requirements"
 authors = ["Amar Prakash Pandey <@amarlearning>"]
 readme = "README.md"
-packages = [{include = "spark_cluster_optimiser"}]
+packages = [{include = "spot_optimizer"}]
 
 [tool.poetry.dependencies]
 python = "^3.10.14"
@@ -33,4 +33,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-cluster-optimiser = "spark_cluster_optimiser.cli:main"
+spot-optimiser = "spot_optimizer.cli:main"

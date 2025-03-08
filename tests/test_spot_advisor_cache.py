@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from spark_cluster_optimiser.spot_advisor_data.aws_spot_advisor_cache import (
+from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import (
     AwsSpotAdvisorData,
 )
 

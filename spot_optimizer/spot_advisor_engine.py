@@ -1,12 +1,11 @@
 import logging
+import pandas as pd
 from datetime import datetime
 
-import pandas as pd
+from spot_optimizer.config import CACHE_EXPIRY_DEFAULT
+from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
+from spot_optimizer.storage_engine.storage_engine import StorageEngine
 
-from spark_cluster_optimiser.spot_advisor_data.aws_spot_advisor_cache import (
-    AwsSpotAdvisorData,
-)
-from spark_cluster_optimiser.storage_engine.storage_engine import StorageEngine
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,9 +13,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
-CACHE_EXPIRY_DEFAULT = 3600  # 1 hour
-
 
 def fetch_and_store_spot_data(
     advisor: AwsSpotAdvisorData, db: StorageEngine

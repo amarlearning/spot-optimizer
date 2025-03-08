@@ -1,6 +1,6 @@
 import argparse
 
-from spark_cluster_optimiser.spark_cluster_optimiser import cluster_optimiser
+from spot_optimizer.spark_cluster_optimiser import cluster_optimiser
 
 
 def main():
