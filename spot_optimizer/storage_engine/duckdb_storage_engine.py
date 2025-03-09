@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -17,6 +19,10 @@ class DuckDBStorage(StorageEngine):
         """
         self.db_path = db_path
         self.conn: Optional[duckdb.DuckDBPyConnection] = None
+        metadata_path = "resources/instance_metadata.json"
+                
+        with open(metadata_path) as f:
+            self.instance_metadata = json.load(f)
 
     def connect(self) -> None:
         """Establish connection to DuckDB."""
@@ -45,7 +51,6 @@ class DuckDBStorage(StorageEngine):
                     ram_gb FLOAT,
                     storage_type VARCHAR,
                     architecture VARCHAR,
-                    network_performance VARCHAR,
                     emr_compatible BOOLEAN DEFAULT FALSE,
                     emr_min_version VARCHAR
                 )
@@ -96,29 +101,30 @@ class DuckDBStorage(StorageEngine):
                 "INSERT INTO global_rate (global_rate) VALUES (?)",
                 [data["global_rate"]]
             )
-
-            # Store instance data
-            instance_data = [
-                (
+            
+            # Store instance data with metadata
+            instance_data = []
+            for key, value in data["instance_types"].items():
+                # Get storage and arch from metadata, fallback to defaults if not found
+                metadata = self.instance_metadata.get(key, {})
+                instance_data.append((
                     key,
-                    value.get("instance_family", ""),
+                    key.split(".")[0],
                     value["cores"],
                     value["ram_gb"],
-                    value.get("storage_type", ""),
-                    value.get("architecture", "x86_64"),
-                    value.get("network_performance", ""),
-                    value.get("emr_compatible", False),
+                    metadata.get("storage", "ebs"),
+                    metadata.get("arch", "x86_64"),
+                    value.get("emr", False),
                     value.get("emr_min_version", None)
-                )
-                for key, value in data["instance_types"].items()
-            ]
+                ))
+
             self.conn.executemany(
                 """
                 INSERT INTO instance_types (
                     instance_type, instance_family, cores, ram_gb,
-                    storage_type, architecture, network_performance,
+                    storage_type, architecture,
                     emr_compatible, emr_min_version
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 instance_data
             )

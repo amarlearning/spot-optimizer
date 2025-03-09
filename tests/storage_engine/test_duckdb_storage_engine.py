@@ -14,7 +14,6 @@ def sample_data():
                 "ram_gb": 16.0,
                 "storage_type": "EBS",
                 "architecture": "x86_64",
-                "network_performance": "Up to 10 Gigabit",
                 "emr_compatible": True,
                 "emr_min_version": "5.0.0"
             },
@@ -24,7 +23,6 @@ def sample_data():
                 "ram_gb": 16.0,
                 "storage_type": "EBS",
                 "architecture": "arm64",
-                "network_performance": "Up to 12 Gigabit",
                 "emr_compatible": True,
                 "emr_min_version": "6.0.0"
             }
