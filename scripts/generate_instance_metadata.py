@@ -48,7 +48,7 @@ def scrape_aws_instances():
         }
         
     # Save to JSON
-    with open("resources/instance_metadata.json", "w") as f:
+    with open("spot_optimizer/resources/instance_metadata.json", "w") as f:
         json.dump(instances, f, indent=4)
     
     print(f"Extracted {len(instances)} AWS instance types. Data saved to instance_metadata.json.")

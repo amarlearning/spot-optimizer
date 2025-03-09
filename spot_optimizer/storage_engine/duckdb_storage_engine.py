@@ -1,3 +1,4 @@
+import os
 import json
 from pathlib import Path
 from datetime import datetime
@@ -19,8 +20,9 @@ class DuckDBStorage(StorageEngine):
         """
         self.db_path = db_path
         self.conn: Optional[duckdb.DuckDBPyConnection] = None
-        metadata_path = "resources/instance_metadata.json"
-                
+        
+        metadata_path = os.path.join(Path(__file__).parent.parent, "resources", "instance_metadata.json")
+
         with open(metadata_path) as f:
             self.instance_metadata = json.load(f)
 

@@ -39,8 +39,8 @@ coverage:  ## Run tests with coverage report
 		--cov-report=html \
 		--cov-fail-under=$(COVERAGE_THRESHOLD)
 
-build: clean lint test coverage  ## Build package
+build: clean coverage  ## Build package
 	poetry build
 
 publish: build  ## Publish package to PyPI
-	poetry publish
+	poetry publish 
