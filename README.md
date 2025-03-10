@@ -2,26 +2,24 @@
 
 [![Python Tests](https://github.com/amarlearning/spot-optimizer/actions/workflows/python-tests.yml/badge.svg)](https://github.com/amarlearning/spot-optimizer/actions/workflows/python-tests.yml)
 
-This Python library helps users select the best AWS spot instances based on their resource requirements such as cores, RAM, storage type (SSD), and instance architecture (x86 or ARM). The library optimizes for various use cases, including but not limited to:
-- Spark/EMR clusters
-- Machine Learning workloads
-- Gaming servers
-- General compute workloads
-- Containerized applications
+🚀 Spot Optimizer is a Python library that helps users select the best AWS spot instances based on their resource requirements, including cores, RAM, storage type (SSD), instance architecture (x86 or ARM), AWS region, EMR version compatibility, and instance family preferences. 
 
-It allows users to optimize for fewer nodes (low latency), more nodes (fault tolerance), or balanced configurations while selecting instances with the lowest spot interruption rates.
+It replaces complex, in-house logic for finding the best spot instances with a simple and powerful abstraction. No more manual guesswork — just the right instances at the right time. 
 
+## Why Spot Optimizer?
+Managing spot instance selection within your codebase can be tedious and error-prone. Spot Optimizer provides a clean, abstracted solution to intelligently select the most stable and cost-effective instances.
+
+### Configuration Guarantee
 It ensures that the selected configuration meets or exceeds the user's requirements. For example, if you request 20 cores and 100GB of RAM, the library will suggest a configuration with at least those resources, rounding up to the nearest available configuration.
 
 ---
 
-## Goals
-
-1. **Ease of Use**: Provide a simple interface to specify resource requirements.
-2. **Optimization**: Suggest instance types and counts tailored to user preferences (latency, fault tolerance, or balanced configurations).
-3. **Flexibility**: Support various filters such as SSD storage, ARM architecture, and optional EMR version compatibility.
-4. **Scalability**: Handle diverse workloads with varying resource needs.
-5. **Reliability**: Prioritize instance types with the lowest spot interruption rates.
+## Key Benefits
+- **💡 Informed Decisions**: Picks instances with the lowest interruption rates and the best fit for your workload.
+- **🧠 Dynamic Reliability**: Smartly updates interruption rates every hour to ensure the most stable instance selection.
+- **🛠️ Operational Efficiency**: No more homegrown scripts or complex logic — just plug and play.
+- **⚡ High Flexibility**: Supports diverse use cases like Spark/EMR clusters, ML workloads, gaming servers, and more.
+- **🏗️ Scalable and Reliable**: Automatically adjusts to changing resource needs while minimizing downtime.
 
 ---
 
@@ -154,7 +152,8 @@ make clean
 
 # Performance Optimisations
 
-- Updates the instance interruption table only every hour and not the whole data, such as ranges and instance types, since they don't change often.
+- Efficiently updates the instance interruption table only every hour, avoiding unnecessary data fetches.
+- Focuses on providing the most stable instances based on the latest interruption rate data.
 
 ---
 
