@@ -4,33 +4,55 @@ from spot_optimizer.storage_engine.duckdb_storage_engine import DuckDBStorage
 
 @pytest.fixture
 def sample_data():
-    """Sample data fixture for testing."""
+    """Sample data for testing storage operations."""
     return {
         "global_rate": "0.1",
         "instance_types": {
             "m5.xlarge": {
-                "instance_family": "m5",
                 "cores": 4,
                 "ram_gb": 16.0,
-                "storage_type": "EBS",
-                "architecture": "x86_64",
-                "emr_compatible": True,
+                "emr": True,
                 "emr_min_version": "5.0.0"
             },
             "c6g.2xlarge": {
-                "instance_family": "c6g",
                 "cores": 8,
                 "ram_gb": 16.0,
-                "storage_type": "EBS",
-                "architecture": "arm64",
-                "emr_compatible": True,
+                "emr": True,
                 "emr_min_version": "6.0.0"
             }
         },
         "ranges": [
             {"index": 1, "label": "low", "dots": 1, "max": 5},
             {"index": 2, "label": "medium", "dots": 2, "max": 10}
-        ]
+        ],
+        "spot_advisor": {
+            "us-west-2": {
+                "Linux": {
+                    "m5.xlarge": {
+                        "s": 75,
+                        "r": 1
+                    },
+                    "c6g.2xlarge": {
+                        "s": 65,
+                        "r": 2
+                    }
+                },
+                "Windows": {
+                    "m5.xlarge": {
+                        "s": 70,
+                        "r": 2
+                    }
+                }
+            },
+            "us-east-1": {
+                "Linux": {
+                    "m5.xlarge": {
+                        "s": 80,
+                        "r": 1
+                    }
+                }
+            }
+        }
     }
 
 

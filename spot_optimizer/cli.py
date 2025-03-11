@@ -1,3 +1,4 @@
+import json
 import argparse
 
 from spot_optimizer import optimize
@@ -106,7 +107,7 @@ def main():
         mode=args.mode,
     )
 
-    print(f"Spot instance optimization result: {result}")
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":

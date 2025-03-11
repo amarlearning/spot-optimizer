@@ -141,6 +141,24 @@ class DuckDBStorage(StorageEngine):
                 ranges_data
             )
 
+            # Fix: Store spot advisor data with correct structure
+            spot_advisor_data = []
+            for region, os_data in data["spot_advisor"].items():
+                for os_name, instance_data in os_data.items():
+                    for instance_type, scores in instance_data.items():
+                        spot_advisor_data.append((
+                            region,          # e.g., "ap-southeast-4"
+                            os_name,         # e.g., "Linux"
+                            instance_type,   # e.g., "r6i.24xlarge"
+                            scores["s"],     # spot score
+                            scores["r"]      # rate
+                        ))
+
+            self.conn.executemany(
+                "INSERT INTO spot_advisor (region, os, instance_types, s, r) VALUES (?, ?, ?, ?, ?)",
+                spot_advisor_data
+            )
+
         except Exception as e:
             raise RuntimeError(f"Failed to store data: {str(e)}")
 
