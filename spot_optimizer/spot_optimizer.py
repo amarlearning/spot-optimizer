@@ -1,5 +1,7 @@
+import os
 import logging
 from typing import Dict, List, Optional
+from appdirs import user_data_dir
 
 from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
@@ -15,11 +17,31 @@ class SpotOptimizer:
     
     _instance: Optional['SpotOptimizer'] = None
     
-    def __init__(self, db_path: str = "spot_advisor_data.db"):
+    @staticmethod
+    def get_default_db_path() -> str:
+        """
+        Get the database path in user data directory.
+        
+        Returns:
+            str: Path to the database file in the user's data directory
+        """
+        app_name = "spot-optimizer"
+        app_author = "aws-samples"  # Change this to your organization name
+        data_dir = user_data_dir(app_name, app_author)
+        
+        # Create directory if it doesn't exist
+        os.makedirs(data_dir, exist_ok=True)
+        
+        return os.path.join(data_dir, "spot_advisor_data.db")
+    
+    def __init__(self):
         """Initialize the optimizer with its dependencies."""
+        self.db_path = self.get_default_db_path()
+        logger.debug(f"Using database path: {self.db_path}")
+        
         self.spot_advisor = AwsSpotAdvisorData()
-        self.db = DuckDBStorage(db_path=db_path)
-        self.db.connect()  # Establish initial connection
+        self.db = DuckDBStorage(db_path=self.db_path)
+        self.db.connect()
         
     def __del__(self):
         """Cleanup database connection."""
@@ -27,10 +49,15 @@ class SpotOptimizer:
             self.db.disconnect()
     
     @classmethod
-    def get_instance(cls, db_path: str = "spot_advisor_data.db") -> 'SpotOptimizer':
-        """Get or create the singleton instance."""
+    def get_instance(cls) -> 'SpotOptimizer':
+        """
+        Get or create the singleton instance.
+        
+        Returns:
+            SpotOptimizer: Singleton instance of the optimizer
+        """
         if cls._instance is None:
-            cls._instance = cls(db_path)
+            cls._instance = cls()
         return cls._instance
     
     def optimize(

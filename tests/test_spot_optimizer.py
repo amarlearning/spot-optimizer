@@ -1,8 +1,16 @@
+import os
 import pytest
 from unittest.mock import Mock, patch
 import pandas as pd
 from spot_optimizer.spot_optimizer import SpotOptimizer
 from spot_optimizer.optimizer_mode import Mode
+
+@pytest.fixture
+def mock_data_dir(tmp_path):
+    """Create a temporary directory for test data."""
+    with patch('spot_optimizer.spot_optimizer.user_data_dir') as mock_dir:
+        mock_dir.return_value = str(tmp_path)
+        yield tmp_path
 
 @pytest.fixture
 def mock_db():
@@ -16,13 +24,19 @@ def mock_advisor():
     return Mock()
 
 @pytest.fixture
-def optimizer(mock_db, mock_advisor):
+def optimizer(mock_db, mock_advisor, mock_data_dir):
     with patch('spot_optimizer.spot_optimizer.DuckDBStorage') as mock_db_class, \
          patch('spot_optimizer.spot_optimizer.AwsSpotAdvisorData') as mock_advisor_class:
         mock_db_class.return_value = mock_db
         mock_advisor_class.return_value = mock_advisor
         optimizer = SpotOptimizer()
         yield optimizer
+        
+def test_default_db_path(mock_data_dir):
+    """Test that default database path is created correctly."""
+    expected_path = os.path.join(str(mock_data_dir), "spot_advisor_data.db")
+    assert SpotOptimizer.get_default_db_path() == expected_path
+    assert os.path.dirname(expected_path) == str(mock_data_dir)
 
 def test_singleton_pattern():
     """Test that SpotOptimizer follows singleton pattern."""
