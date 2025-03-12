@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "spot-optimizer"
-version = "0.1.0"
-description = "Help you get the best spot instance given the resource requirements"
+version = "1.0.0"
+description = "AWS EC2 spot instance optimizer"
 authors = ["Amar Prakash Pandey <@amarlearning>"]
 readme = "README.md"
+repository = "https://github.com/amarlearning/spot-optimizer"
+keywords = ["aws", "ec2", "spot", "optimizer"]
 packages = [
     { include = "spot_optimizer" },
     { include = "spot_optimizer/resources/*.json" }
