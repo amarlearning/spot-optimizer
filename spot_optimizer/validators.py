@@ -5,15 +5,11 @@ def validate_cores(cores: int) -> None:
     """Validate CPU cores requirement."""
     if cores <= 0:
         raise ValueError("cores must be positive")
-    if cores > 1024:
-        raise ValueError("cores exceeds maximum limit of 1024")
 
 def validate_memory(memory: int) -> None:
     """Validate memory requirement in GB."""
     if memory <= 0:
         raise ValueError("memory must be positive")
-    if memory > 4096:
-        raise ValueError("memory exceeds maximum limit of 4096 GB")
 
 def validate_mode(mode: str) -> None:
     """Validate optimization mode."""

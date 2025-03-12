@@ -82,9 +82,6 @@ class SpotOptimizer:
             # Get instance count range based on mode
             mode_ranges = Mode.calculate_ranges(cores, memory)
             
-            print(mode_ranges)
-            print("\n\n")
-            
             min_instances, max_instances = mode_ranges[mode]
             
             query = """
@@ -153,7 +150,23 @@ class SpotOptimizer:
             result = self.db.query_data(query, params)
             
             if len(result) == 0:
-                raise ValueError("No suitable instances found matching the requirements")
+                params = []
+                params.append(f"cpu = {cores}")
+                params.append(f"memory = {memory}")
+                params.append(f"region = {region}")
+                params.append(f"mode = {mode}")
+                
+                if instance_family:
+                    params.append(f"instance_family = {instance_family}")
+                if emr_version:
+                    params.append(f"emr_version = {emr_version}")
+                if ssd_only:
+                    params.append("ssd_only = True")
+                if not arm_instances: 
+                    params.append("arm_instances = False")
+                
+                error_msg = "No suitable instances found matching for " + " and ".join(params)
+                raise ValueError(error_msg)
             
             best_match = result.iloc[0]
             

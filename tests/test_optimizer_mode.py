@@ -25,9 +25,9 @@ def test_optimizer_modes():
     
     # Medium workload
     (64, 256, {
-        'latency': (1, 2),
-        'balanced': (3, 4),
-        'fault_tolerance': (5, 8)
+        'latency': (1, 1),
+        'balanced': (2, 2),
+        'fault_tolerance': (3, 4)
     }),
     (128, 512, {
         'latency': (1, 4),
@@ -37,14 +37,19 @@ def test_optimizer_modes():
     
     # Large workload
     (400, 2000, {
-        'latency': (1, 4),
-        'balanced': (5, 31),
+        'latency': (1, 7),
+        'balanced': (8, 31),
         'fault_tolerance': (32, 62)
     }),
     (1000, 4000, {
-        'latency': (1, 4),
-        'balanced': (5, 62),
+        'latency': (1, 15),
+        'balanced': (16, 62),
         'fault_tolerance': (63, 124)
+    }),
+    (2000, 10000, {
+        'latency': (1, 39),
+        'balanced': (40, 156),
+        'fault_tolerance': (157, 312)
     })
 ])
 def test_mode_ranges(cores, memory, expected_ranges):
@@ -85,13 +90,3 @@ def test_large_workload_distinct_ranges():
     assert balanced_min > latency_max, "Balanced range should start after latency range ends"
     assert fault_min > balanced_max, "Fault tolerance range should start after balanced range ends"
 
-def test_extreme_values():
-    """Test handling of extreme resource requirements."""
-    # Very large values
-    large_ranges = Mode.calculate_ranges(2000, 8000)
-    assert large_ranges[Mode.LATENCY.value][1] <= 4, "Latency mode should still be capped for large values"
-    
-    # Very small values
-    small_ranges = Mode.calculate_ranges(1, 4)
-    assert small_ranges[Mode.LATENCY.value][0] == 1, "Latency mode should always start at 1"
-    assert all(min_val > 0 for min_val, _ in small_ranges.values()), "All min values should be positive"

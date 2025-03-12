@@ -17,7 +17,6 @@ def test_validate_cores_valid():
 @pytest.mark.parametrize("cores,error_msg", [
     (0, "cores must be positive"),
     (-1, "cores must be positive"),
-    (1025, "cores exceeds maximum limit of 1024"),
 ])
 def test_validate_cores_invalid(cores, error_msg):
     """Test invalid core values."""
@@ -34,7 +33,6 @@ def test_validate_memory_valid():
 @pytest.mark.parametrize("memory,error_msg", [
     (0, "memory must be positive"),
     (-1, "memory must be positive"),
-    (4097, "memory exceeds maximum limit of 4096 GB"),
 ])
 def test_validate_memory_invalid(memory, error_msg):
     """Test invalid memory values."""
@@ -70,8 +68,6 @@ def test_validate_optimization_params_valid():
     (0, 32, Mode.BALANCED.value, "cores must be positive"),
     (8, 0, Mode.BALANCED.value, "memory must be positive"),
     (8, 32, "invalid_mode", "Invalid mode"),
-    (1025, 32, Mode.BALANCED.value, "cores exceeds maximum limit"),
-    (8, 4097, Mode.BALANCED.value, "memory exceeds maximum limit"),
 ])
 def test_validate_optimization_params_invalid(cores, memory, mode, expected_error):
     """Test invalid parameter combinations."""

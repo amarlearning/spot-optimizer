@@ -103,7 +103,7 @@ def test_optimize_no_results(optimizer, mock_db):
     """Test optimization when no suitable instances are found."""
     mock_db.query_data.return_value = pd.DataFrame()
     
-    with pytest.raises(ValueError, match="No suitable instances found matching the requirements"):
+    with pytest.raises(ValueError, match="No suitable instances found matching for cpu = 8 and memory = 32 and region = us-west-2 and mode = balanced"):
         optimizer.optimize(cores=8, memory=32)
 
 def test_optimize_with_instance_family(optimizer, mock_db, sample_query_result):
