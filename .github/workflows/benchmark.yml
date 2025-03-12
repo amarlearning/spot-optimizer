@@ -1,0 +1,33 @@
+name: Performance Benchmarks
+
+on:
+  schedule:
+    # Run weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:  # Allow manual triggers
+  push:
+    branches: [ main ]
+    paths:
+      - 'spot_optimizer/**'  # Only run when core code changes
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+        
+    - name: Run benchmarks
+      run: |
+        mkdir -p tests/resources
+        chmod +x tests/performance/run_benchmark.sh
+        ./tests/performance/run_benchmark.sh
+        cat tests/performance/benchmark_queries.log
