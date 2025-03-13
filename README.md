@@ -157,6 +157,33 @@ make clean
 
 ---
 
+## Performance Benchmarks
+
+Performance tests were run on GitHub Actions runner (2 vCPU, 7GB RAM) with 64,295 different combinations of resource requirements and constraints.
+
+### Quick Stats
+- **Total Combinations Tested**: 64,295
+- **Total Processing Time**: 338.88 seconds
+- **Cache Preparation Time**: 19.30 seconds
+
+### Query Performance
+| Metric | Time (ms) |
+|--------|-----------|
+| Average | 5.4 |
+| Minimum | 4.1 |
+| Maximum | 21.5 |
+| Median | 5.3 |
+| 95th Percentile | 6.4 |
+| Standard Deviation | 0.6 |
+
+### Throughput
+- **Average Processing Rate**: ~190 queries/second
+- **Effective Throughput**: 64,295 combinations in 338.88 seconds
+
+> Note: These benchmarks were run on GitHub Actions' standard runner (2 vCPU, 7GB RAM). Performance in production environments will likely be better with dedicated hardware and more resources.
+
+---
+
 ## Issues
 
 If you encounter any bugs, please report them on the [issue tracker](https://github.com/amarlearning/spark-cluster-optimiser/issues).

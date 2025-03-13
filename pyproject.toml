@@ -2,7 +2,7 @@
 name = "spot-optimizer"
 version = "1.0.0"
 description = "AWS EC2 spot instance optimizer"
-authors = ["Amar Prakash Pandey <@amarlearning>"]
+authors = ["Amar Prakash <amar.om1994@gmail.com>"]
 readme = "README.md"
 repository = "https://github.com/amarlearning/spot-optimizer"
 keywords = ["aws", "ec2", "spot", "optimizer"]
