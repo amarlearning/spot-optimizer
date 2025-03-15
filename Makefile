@@ -37,7 +37,7 @@ test:  ## Run tests
 coverage:  ## Run tests with coverage report
 	$(PYTEST) --cov=$(PACKAGE_NAME) \
 		--cov-report=term-missing \
-		--cov-report=html \
+		--cov-report=xml \
 		--cov-fail-under=$(COVERAGE_THRESHOLD)
 
 build: clean coverage  ## Build package
