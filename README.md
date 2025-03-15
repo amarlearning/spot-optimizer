@@ -1,6 +1,10 @@
 # Spot Optimizer
 
 [![Python Tests](https://github.com/amarlearning/spot-optimizer/actions/workflows/python-tests.yml/badge.svg)](https://github.com/amarlearning/spot-optimizer/actions/workflows/python-tests.yml)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spot-optimizer.svg)](https://pypi.org/project/spot-optimizer/)
+[![License](https://img.shields.io/:license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/spot-optimizer)](https://pypi.org/project/spot-optimizer/)
+
 
 🚀 Spot Optimizer is a Python library that helps users select the best AWS spot instances based on their resource requirements, including cores, RAM, storage type (SSD), instance architecture (x86 or ARM), AWS region, EMR version compatibility, and instance family preferences. 
 
