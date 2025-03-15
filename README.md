@@ -1,6 +1,7 @@
 # Spot Optimizer
 
 [![Python Tests](https://github.com/amarlearning/spot-optimizer/actions/workflows/python-tests.yml/badge.svg)](https://github.com/amarlearning/spot-optimizer/actions/workflows/python-tests.yml)
+[![codecov](https://codecov.io/gh/amarlearning/spot-optimizer/graph/badge.svg?token=3QJ89GFSWC)](https://codecov.io/gh/amarlearning/spot-optimizer)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spot-optimizer.svg)](https://pypi.org/project/spot-optimizer/)
 [![License](https://img.shields.io/:license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/spot-optimizer)](https://pypi.org/project/spot-optimizer/)
