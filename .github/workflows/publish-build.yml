@@ -3,7 +3,11 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - 'v*'  # Trigger on version tags v1.0.0, v1.2.3, etc.
+      - 'v*'
+
+jobs:
+  verify:
+    uses: ./.github/workflows/python-tests.yml
 
 jobs:
   publish:
