@@ -44,4 +44,5 @@ build: clean coverage  ## Build package
 	poetry build
 
 publish: build  ## Publish package to PyPI
-	poetry publish 
+	python scripts/generate_instance_metadata.py
+	# poetry publish 
