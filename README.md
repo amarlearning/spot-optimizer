@@ -86,10 +86,10 @@ print(result)
 
 ```bash
 # Basic usage
-spot-optimizer optimize --cores 8 --memory 32
+spot-optimizer --cores 8 --memory 32
 
 # Advanced usage
-spot-optimizer optimize \
+spot-optimizer \
     --cores 8 \
     --memory 32 \
     --region us-east-1 \
