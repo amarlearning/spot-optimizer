@@ -69,17 +69,17 @@ result = optimize(
     mode="balanced"
 )
 
-print(result)
-# Output:
-# {
-#     "instances": {
-#         "type": "m6i.2xlarge",
-#         "count": 1
-#     },
-#     "mode": "balanced",
-#     "total_cores": 8,
-#     "total_ram": 32
-# }
+# output
+{
+   "instances": {
+      "type": "m6i.2xlarge",
+      "count": 1
+   },
+   "mode": "balanced",
+   "total_cores": 8,
+   "total_ram": 32
+}
+
 ```
 
 ### CLI Usage
