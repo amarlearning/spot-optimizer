@@ -16,6 +16,10 @@ def analyze_failure_patterns(results: List[Dict[str, Any]]):
     print("\nFailure Pattern Analysis:")
     print(f"Total Failed Queries: {total_failures}")
     
+    if total_failures == 0:
+        print("No failures detected! All queries completed successfully.")
+        return
+    
     # Analyze by resource requirements
     core_ranges = [(0, 16), (17, 64), (65, 256), (257, float('inf'))]
     memory_ranges = [(0, 32), (33, 128), (129, 512), (513, float('inf'))]
@@ -77,14 +81,15 @@ def analyze_failure_patterns(results: List[Dict[str, Any]]):
 
     # Find extreme failure cases
     print("\n6. Example Extreme Cases:")
-    max_core_failure = max(failed_queries, key=lambda x: x["params"]["cores"])
-    max_mem_failure = max(failed_queries, key=lambda x: x["params"]["memory"])
-    
-    print("Highest core request that failed:")
-    print(json.dumps(max_core_failure["params"], indent=2))
-    
-    print("\nHighest memory request that failed:")
-    print(json.dumps(max_mem_failure["params"], indent=2))
+    if failed_queries:  # Only show if there are failures
+        max_core_failure = max(failed_queries, key=lambda x: x["params"]["cores"])
+        max_mem_failure = max(failed_queries, key=lambda x: x["params"]["memory"])
+        
+        print("Highest core request that failed:")
+        print(json.dumps(max_core_failure["params"], indent=2))
+        
+        print("\nHighest memory request that failed:")
+        print(json.dumps(max_mem_failure["params"], indent=2))
 
 class PerformanceTester:
     def __init__(self):

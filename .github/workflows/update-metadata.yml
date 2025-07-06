@@ -1,0 +1,99 @@
+name: Update Instance Metadata
+
+on:
+  schedule:
+    - cron: '0 0 * * MON'  # Runs at 00:00 UTC every Monday
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  update-metadata:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+        
+      - name: Install dependencies
+        run: |
+          make install
+          pip install requests beautifulsoup4
+
+      - name: Generate new metadata
+        run: python scripts/generate_instance_metadata.py
+        
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [[ -n "$(git status --porcelain spot_optimizer/resources/instance_metadata.json)" ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure Git
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Bump version
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          # Get current version from pyproject.toml
+          CURRENT_VERSION=$(poetry version -s)
+          # Bump minor version
+          poetry version minor
+          # Get new version
+          NEW_VERSION=$(poetry version -s)
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: |
+            chore: update instance metadata and bump version to ${{ env.NEW_VERSION }}
+            
+            - Updates instance metadata from AWS EC2 page
+            - Bumps package version to ${{ env.NEW_VERSION }}
+          title: "chore: weekly instance metadata update"
+          body: |
+            🤖 Weekly Instance Metadata Update
+            
+            This PR:
+            - Updates instance metadata from AWS EC2 page
+            - Bumps package version to ${{ env.NEW_VERSION }}
+            
+            ### Changes Summary
+            ```diff
+            $(git diff --stat spot_optimizer/resources/instance_metadata.json)
+            ```
+            
+            Please review the changes in `instance_metadata.json` to ensure the data looks correct.
+          branch: metadata-update
+          base: main
+          labels: |
+            automated
+            metadata-update
+
+      - name: Comment PR Status
+        if: steps.check_changes.outputs.changes == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '✅ Metadata update completed successfully\n\nOnce this PR is merged, a new tag will be created and the package will be published to PyPI automatically via the publish workflow.'
+            })
