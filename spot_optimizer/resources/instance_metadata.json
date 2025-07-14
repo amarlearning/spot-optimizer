@@ -5,6 +5,12 @@
         "storage": "ebs",
         "vcpu": 8
     },
+    "P6e- gb200.36xlarge": {
+        "arch": "x86_64",
+        "memory": 144.0,
+        "storage": "ebs",
+        "vcpu": 4
+    },
     "c4.2xlarge": {
         "arch": "x86_64",
         "memory": 15.0,
@@ -4762,6 +4768,18 @@
         "memory": 6144.0,
         "storage": "ebs",
         "vcpu": 448
+    },
+    "u-p6e- gb200x36": {
+        "arch": "x86_64",
+        "memory": 1296.0,
+        "storage": "ebs",
+        "vcpu": 36
+    },
+    "u-p6e- gb200x72": {
+        "arch": "x86_64",
+        "memory": 2592.0,
+        "storage": "ebs",
+        "vcpu": 72
     },
     "u7i-12tb.224xlarge": {
         "arch": "x86_64",
