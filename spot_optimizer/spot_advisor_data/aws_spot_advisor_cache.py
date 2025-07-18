@@ -1,11 +1,11 @@
-import logging
 import time
 from urllib.parse import urlparse
 
 import requests
 from requests.exceptions import RequestException
+from spot_optimizer.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AwsSpotAdvisorData:

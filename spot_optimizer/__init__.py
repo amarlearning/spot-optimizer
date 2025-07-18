@@ -1,6 +1,11 @@
 from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.spot_optimizer import SpotOptimizer
 
+# Initialize centralized logging configuration
+from spot_optimizer.logging_config import setup_logging
+
+setup_logging()
+
 default_optimizer = SpotOptimizer()
 
 __all__ = ["optimize", "Mode", "SpotOptimizer"]

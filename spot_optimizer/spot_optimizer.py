@@ -1,5 +1,4 @@
 import os
-import logging
 import threading
 from typing import Dict, List, Optional
 from appdirs import user_data_dir
@@ -9,9 +8,10 @@ from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvis
 from spot_optimizer.storage_engine.duckdb_storage_engine import DuckDBStorage
 from spot_optimizer.spot_advisor_engine import ensure_fresh_data
 from spot_optimizer.validators import validate_optimization_params
+from spot_optimizer.logging_config import get_logger
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SpotOptimizer:

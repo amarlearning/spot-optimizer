@@ -1,10 +1,10 @@
-import logging
 from datetime import datetime
 
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
 from spot_optimizer.storage_engine.storage_engine import StorageEngine
+from spot_optimizer.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 CACHE_EXPIRY_SECONDS = 3600  # 1 hour
 

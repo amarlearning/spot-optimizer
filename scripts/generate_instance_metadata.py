@@ -1,13 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 import json
-import logging
 from pathlib import Path
 from typing import Dict, Any
 import sys
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Add the parent directory to the path so we can import from spot_optimizer
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from spot_optimizer.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class InstanceMetadataGenerator:
