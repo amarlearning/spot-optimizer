@@ -132,7 +132,7 @@ def test_optimize_without_arm_instances(optimizer_core, mock_db, sample_query_re
 def test_optimize_database_error(optimizer_core, mock_db):
     """Test handling of database errors during optimization."""
     mock_db.query_data.side_effect = Exception("DB error")
-    with pytest.raises(OptimizationError, match="Unexpected error during optimization"):
+    with pytest.raises(OptimizationError, match="Error optimizing instances: DB error"):
         optimizer_core.optimize(
             cores=8,
             memory=32,

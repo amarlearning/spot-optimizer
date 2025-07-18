@@ -28,16 +28,11 @@ def test_init_with_valid_url():
 
 @pytest.mark.parametrize(
     "invalid_url",
-    [
-        "",  # Empty
-        "not_a_url",  # No scheme
-        "http://",  # No netloc
-        "://example.com",  # No scheme
-    ],
+    ["", "not_a_url", "http://", "ftp://example.com"],
 )
-def test_init_with_invalid_url(invalid_url):
+def test_init_with_invalid_url(invalid_url: str):
     """Test initialization with invalid URLs."""
-    with pytest.raises(ValidationError, match="Invalid URL"):
+    with pytest.raises(ValidationError, match="Invalid URL format"):
         AwsSpotAdvisorData(url=invalid_url)
 
 

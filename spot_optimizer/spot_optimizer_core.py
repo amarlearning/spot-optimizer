@@ -1,25 +1,32 @@
 from typing import Dict, List, Any, Union
 import pandas as pd
-from spot_optimizer.optimizer_mode import Mode
+import math
 from spot_optimizer.storage_engine.storage_engine import StorageEngine
-from spot_optimizer.exceptions import (
-    OptimizationError,
-    ErrorCode,
-    raise_optimization_error,
-)
+from spot_optimizer.exceptions import OptimizationError, ErrorCode
 from spot_optimizer.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+
+def calculate_instance_ranges(cores: int, memory: int, mode: str) -> tuple[int, int]:
+    """Calculate min and max instances based on optimization mode."""
+    min_instances = math.ceil(cores / 64) if cores > 64 else 1
+    max_instances = math.ceil(cores / 8) if cores > 8 else 2
+
+    if mode == "latency":
+        max_instances = math.ceil(min_instances * 1.5)
+    elif mode == "fault_tolerance":
+        min_instances = math.ceil(max_instances / 2)
+
+    return min_instances, max_instances
 
 
 class SpotOptimizerCore:
     """Handles the core logic for spot instance optimization."""
 
     def __init__(self, db: StorageEngine):
-        """
-        Initialize the optimizer with its dependencies.
-        Args:
-            db: The database storage engine.
+        """Initialize the optimizer with its dependencies.
+        :param db: The database storage engine.
         """
         self.db: StorageEngine = db
 
@@ -34,13 +41,11 @@ class SpotOptimizerCore:
         emr_version: str,
         mode: str,
     ) -> Dict:
-        """
-        Optimize spot instance configuration based on requirements.
-        """
+        """Optimize spot instance configuration based on requirements."""
         try:
-            # Get instance count range based on mode
-            mode_ranges: Dict[str, Any] = Mode.calculate_ranges(cores, memory)
-            min_instances, max_instances = mode_ranges[mode]
+            min_instances, max_instances = calculate_instance_ranges(
+                cores, memory, mode
+            )
 
             query = """
                 WITH ranked_instances AS (
@@ -124,7 +129,6 @@ class SpotOptimizerCore:
                 }
                 if instance_family:
                     error_params["instance_family"] = instance_family
-                if emr_version:
                     error_params["emr_version"] = emr_version
                 if ssd_only:
                     error_params["ssd_only"] = ssd_only
@@ -137,7 +141,7 @@ class SpotOptimizerCore:
                     "No suitable instances found matching for "
                     + " and ".join(param_strs)
                 )
-                raise_optimization_error(error_msg, error_params)
+                raise OptimizationError(error_msg, ErrorCode.NO_SUITABLE_INSTANCES)
 
             best_match: pd.Series = result.iloc[0]
 
@@ -155,23 +159,9 @@ class SpotOptimizerCore:
                 },
             }
 
-        except OptimizationError:
-            raise
         except Exception as e:
-            logger.error(f"Error optimizing instances: {e}")
             raise OptimizationError(
-                "Unexpected error during optimization",
+                f"Error optimizing instances: {e}",
                 error_code=ErrorCode.OPTIMIZATION_FAILED,
-                optimization_params={
-                    "cores": cores,
-                    "memory": memory,
-                    "region": region,
-                    "mode": mode,
-                },
-                suggestions=[
-                    "Check if the database is accessible",
-                    "Verify spot advisor data is available",
-                    "Try with different parameters",
-                ],
                 cause=e,
             )

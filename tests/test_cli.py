@@ -132,9 +132,9 @@ def test_main_error(mock_optimize, capsys):
         with pytest.raises(SystemExit) as exc_info:
             main()
 
-        assert exc_info.value.code != 0
+        assert exc_info.value.code == 1
         captured = capsys.readouterr()
-        assert "No suitable instances found" in captured.err
+        assert "SpotOptimizerError: No suitable instances found" in captured.err
 
 
 def test_validate_positive_int_directly():

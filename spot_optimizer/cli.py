@@ -10,30 +10,27 @@ from spot_optimizer.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-def _handle_error(e: SpotOptimizerError, exit_code: int) -> None:
+def _handle_error(e: SpotOptimizerError) -> None:
     """Log and print error message, then exit."""
-    logger.error("Error: %s", e, exc_info=True)
-    print(f"Error: {e.message}", file=sys.stderr)
+    print(f"{e.__class__.__name__}: {e}", file=sys.stderr)
+
     if e.suggestions:
         print("Suggestions:", file=sys.stderr)
-        for suggestion in e.suggestions:
+        suggestions = (
+            e.suggestions if isinstance(e.suggestions, list) else [e.suggestions]
+        )
+        for suggestion in suggestions:
             print(f"  - {suggestion}", file=sys.stderr)
-    sys.exit(exit_code)
+
+    sys.exit(1)
 
 
 def validate_positive_int(value: str, param_name: str) -> int:
-    """
-    Validate that the value is a positive integer.
-
-    Args:
-        value: The string value to validate
-        param_name: Name of the parameter for error messages
-
-    Returns:
-        int: The validated positive integer
-
-    Raises:
-        ArgumentTypeError: If value is not a positive integer
+    """Validate that the value is a positive integer.
+    :param value: The string value to validate
+    :param param_name: Name of the parameter for error messages
+    :return: The validated positive integer
+    :raises: ArgumentTypeError: If value is not a positive integer
     """
     try:
         ivalue = int(value)
@@ -49,14 +46,9 @@ def validate_positive_int(value: str, param_name: str) -> int:
 
 
 def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
-    """
-    Parse command line arguments.
-
-    Args:
-        args: List of arguments to parse. Defaults to sys.argv[1:] if None.
-
-    Returns:
-        argparse.Namespace: Parsed command line arguments
+    """Parse command line arguments.
+    :param args: List of arguments to parse. Defaults to sys.argv[1:] if None.
+    :return: Parsed command line arguments
     """
     parser = argparse.ArgumentParser(description="Run the spot instance optimizer.")
     parser.add_argument(
@@ -127,14 +119,9 @@ def main() -> None:
 
         print(json.dumps(result, indent=2))
     except SpotOptimizerError as e:
-        _handle_error(e, 1)
+        _handle_error(e)
     except Exception as e:
-        logger.exception("An unexpected error occurred: %s", e)
-        print(f"Unexpected error: {e}", file=sys.stderr)
-        print(
-            "This is likely a bug. Please report it with the full error details.",
-            file=sys.stderr,
-        )
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
         sys.exit(1)
 
 

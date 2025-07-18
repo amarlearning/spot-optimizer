@@ -8,7 +8,6 @@ from spot_optimizer.exceptions import (
     StorageError,
     DataError,
     NetworkError,
-    ErrorCode,
 )
 
 
@@ -83,9 +82,10 @@ def test_refresh_spot_data_propagates_known_errors(
 def test_refresh_spot_data_unexpected_error(engine, mock_advisor):
     """Test that unexpected errors are wrapped in DataError."""
     mock_advisor.fetch_data.side_effect = Exception("Unexpected failure")
-    with pytest.raises(DataError) as exc_info:
+    with pytest.raises(
+        DataError, match="Unexpected error refreshing spot advisor data"
+    ):
         engine.refresh_spot_data()
-    assert exc_info.value.error_code == ErrorCode.DATA_REFRESH_FAILED
 
 
 @patch("spot_optimizer.spot_advisor_engine.SpotAdvisorEngine.should_refresh_data")
@@ -114,6 +114,7 @@ def test_ensure_fresh_data_does_not_refresh_when_not_needed(
 def test_ensure_fresh_data_unexpected_error(mock_should_refresh, engine):
     """Test that unexpected errors in ensure_fresh_data are wrapped."""
     mock_should_refresh.side_effect = Exception("Chaos")
-    with pytest.raises(DataError) as exc_info:
+    with pytest.raises(
+        DataError, match="Unexpected error ensuring fresh spot advisor data"
+    ):
         engine.ensure_fresh_data()
-    assert exc_info.value.error_code == ErrorCode.DATA_REFRESH_FAILED

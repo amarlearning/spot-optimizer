@@ -3,7 +3,6 @@ import threading
 from typing import Dict, List, Optional
 from appdirs import user_data_dir
 
-from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
 from spot_optimizer.storage_engine.duckdb_storage_engine import DuckDBStorage
 from spot_optimizer.spot_advisor_engine import SpotAdvisorEngine
@@ -127,12 +126,12 @@ class SpotOptimizerFacade:
         arm_instances: bool = True,
         instance_family: Optional[List[str]] = None,
         emr_version: Optional[str] = None,
-        mode: str = Mode.BALANCED.value,
+        mode: str = "balanced",
     ) -> Dict:
         """
         Optimize spot instance configuration based on requirements.
         """
-        validate_optimization_params(cores, memory, mode)
+        validate_optimization_params(cores, memory)
         self.engine.ensure_fresh_data()
         return self.core.optimize(
             cores=cores,

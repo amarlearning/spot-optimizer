@@ -3,14 +3,7 @@ import pandas as pd
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
 from spot_optimizer.storage_engine.storage_engine import StorageEngine
 from spot_optimizer.logging_config import get_logger
-from spot_optimizer.exceptions import (
-    StorageError,
-    DataError,
-    NetworkError,
-    ErrorCode,
-    raise_storage_error,
-    raise_data_error,
-)
+from spot_optimizer.exceptions import StorageError, DataError, NetworkError, ErrorCode
 
 
 logger = get_logger(__name__)
@@ -51,15 +44,15 @@ class SpotAdvisorEngine:
             return True  # Default to refresh
         except (KeyError, IndexError, TypeError) as e:
             logger.warning(f"Data format error checking cache timestamp: {e}")
-            raise_data_error(
+            raise DataError(
                 "Invalid cache timestamp data format",
                 error_code=ErrorCode.DATA_INVALID_FORMAT,
                 cause=e,
             )
         except Exception as e:
             logger.warning(f"Unexpected error checking cache timestamp: {e}")
-            raise_storage_error(
-                message="Unexpected error checking cache timestamp",
+            raise StorageError(
+                "Unexpected error checking cache timestamp",
                 error_code=ErrorCode.STORAGE_QUERY_FAILED,
                 cause=e,
             )
@@ -76,7 +69,7 @@ class SpotAdvisorEngine:
             raise
         except Exception as e:
             logger.error(f"Unexpected error refreshing spot data: {e}")
-            raise_data_error(
+            raise DataError(
                 "Unexpected error refreshing spot advisor data",
                 error_code=ErrorCode.DATA_REFRESH_FAILED,
                 cause=e,
@@ -93,7 +86,7 @@ class SpotAdvisorEngine:
             raise
         except Exception as e:
             logger.error(f"Unexpected error ensuring fresh data: {e}")
-            raise_data_error(
+            raise DataError(
                 "Unexpected error ensuring fresh spot advisor data",
                 error_code=ErrorCode.DATA_REFRESH_FAILED,
                 cause=e,

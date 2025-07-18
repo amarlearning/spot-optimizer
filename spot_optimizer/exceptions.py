@@ -61,11 +61,11 @@ class ErrorCode(Enum):
 class SpotOptimizerError(Exception):
     """Base exception for all Spot Optimizer errors.
 
-    This exception provides structured error handling with:
-    - Error codes for programmatic handling
-    - Context information for debugging
-    - Actionable suggestions for resolution
-    - Support for exception chaining
+    :param message: Human-readable error message
+    :param error_code: Programmatic error code
+    :param context: Additional context information
+    :param suggestions: Actionable suggestions for resolution
+    :param cause: Original exception that caused this error
     """
 
     def __init__(
@@ -76,15 +76,6 @@ class SpotOptimizerError(Exception):
         suggestions: Optional[Union[str, list]] = None,
         cause: Optional[Exception] = None,
     ):
-        """Initialize the base exception.
-
-        Args:
-            message: Human-readable error message
-            error_code: Programmatic error code
-            context: Additional context information
-            suggestions: Actionable suggestions for resolution
-            cause: Original exception that caused this error
-        """
         super().__init__(message)
         self.error_code = error_code
         self.context = context or {}
@@ -95,6 +86,8 @@ class SpotOptimizerError(Exception):
         if cause:
             self.__cause__ = cause
 
+        logger.error("%s: %s", self.__class__.__name__, message, exc_info=True)
+
     def __str__(self) -> str:
         """Return formatted error message with context."""
         parts = [super().__str__()]
@@ -102,13 +95,6 @@ class SpotOptimizerError(Exception):
         if self.context:
             context_str = ", ".join(f"{k}={v}" for k, v in self.context.items())
             parts.append(f"Context: {context_str}")
-
-        if self.suggestions:
-            if isinstance(self.suggestions, list):
-                suggestions_str = "; ".join(self.suggestions)
-            else:
-                suggestions_str = self.suggestions
-            parts.append(f"Suggestions: {suggestions_str}")
 
         return " | ".join(parts)
 
@@ -135,14 +121,12 @@ class ValidationError(SpotOptimizerError):
         valid_values: Optional[Union[str, list]] = None,
         **kwargs,
     ):
-        """Initialize validation error.
-
-        Args:
-            message: Error message
-            error_code: Specific validation error code
-            invalid_value: The invalid value that caused the error
-            valid_values: Valid values or range description
-            **kwargs: Additional arguments for base class
+        """
+        :param message: Error message
+        :param error_code: Specific validation error code
+        :param invalid_value: The invalid value that caused the error
+        :param valid_values: Valid values or range description
+        :param kwargs: Additional arguments for base class
         """
         context = kwargs.get("context", {})
         if invalid_value is not None:
@@ -164,13 +148,11 @@ class ConfigurationError(SpotOptimizerError):
         config_key: Optional[str] = None,
         **kwargs,
     ):
-        """Initialize configuration error.
-
-        Args:
-            message: Error message
-            error_code: Specific configuration error code
-            config_key: The configuration key that caused the error
-            **kwargs: Additional arguments for base class
+        """
+        :param message: Error message
+        :param error_code: Specific configuration error code
+        :param config_key: The configuration key that caused the error
+        :param kwargs: Additional arguments for base class
         """
         context = kwargs.get("context", {})
         if config_key:
@@ -191,14 +173,12 @@ class StorageError(SpotOptimizerError):
         table_name: Optional[str] = None,
         **kwargs,
     ):
-        """Initialize storage error.
-
-        Args:
-            message: Error message
-            error_code: Specific storage error code
-            operation: The database operation that failed
-            table_name: The table involved in the operation
-            **kwargs: Additional arguments for base class
+        """
+        :param message: Error message
+        :param error_code: Specific storage error code
+        :param operation: The database operation that failed
+        :param table_name: The table involved in the operation
+        :param kwargs: Additional arguments for base class
         """
         context = kwargs.get("context", {})
         if operation:
@@ -220,13 +200,11 @@ class OptimizationError(SpotOptimizerError):
         optimization_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
-        """Initialize optimization error.
-
-        Args:
-            message: Error message
-            error_code: Specific optimization error code
-            optimization_params: Parameters used in failed optimization
-            **kwargs: Additional arguments for base class
+        """
+        :param message: Error message
+        :param error_code: Specific optimization error code
+        :param optimization_params: Parameters used in failed optimization
+        :param kwargs: Additional arguments for base class
         """
         context = kwargs.get("context", {})
         if optimization_params:
@@ -247,14 +225,12 @@ class NetworkError(SpotOptimizerError):
         status_code: Optional[int] = None,
         **kwargs,
     ):
-        """Initialize network error.
-
-        Args:
-            message: Error message
-            error_code: Specific network error code
-            url: URL involved in the failed request
-            status_code: HTTP status code if applicable
-            **kwargs: Additional arguments for base class
+        """
+        :param message: Error message
+        :param error_code: Specific network error code
+        :param url: URL involved in the failed request
+        :param status_code: HTTP status code if applicable
+        :param kwargs: Additional arguments for base class
         """
         context = kwargs.get("context", {})
         if url:
@@ -276,13 +252,11 @@ class DataError(SpotOptimizerError):
         data_source: Optional[str] = None,
         **kwargs,
     ):
-        """Initialize data error.
-
-        Args:
-            message: Error message
-            error_code: Specific data error code
-            data_source: Source of the problematic data
-            **kwargs: Additional arguments for base class
+        """
+        :param message: Error message
+        :param error_code: Specific data error code
+        :param data_source: Source of the problematic data
+        :param kwargs: Additional arguments for base class
         """
         context = kwargs.get("context", {})
         if data_source:
@@ -290,176 +264,3 @@ class DataError(SpotOptimizerError):
 
         kwargs["context"] = context
         super().__init__(message, error_code, **kwargs)
-
-
-# Convenience functions for common error scenarios
-def raise_validation_error(
-    message: str,
-    error_code: ErrorCode = ErrorCode.INVALID_PARAMETERS,
-    validation_context: Optional[Dict[str, Any]] = None,
-    suggestions: Optional[list] = None,
-    cause: Optional[Exception] = None,
-) -> None:
-    """Raise a standardized validation error.
-
-    Args:
-        message: Error message
-        error_code: Specific validation error code
-        validation_context: Context information for the validation error
-        suggestions: List of suggested solutions
-        cause: Original exception that caused this error
-    """
-    error = ValidationError(
-        message=message,
-        error_code=error_code,
-        context=validation_context,
-        suggestions=suggestions,
-        cause=cause,
-    )
-    logger.error("Validation error raised: %s", str(error))
-    raise error
-
-
-def raise_storage_error(
-    message: str,
-    error_code: ErrorCode = ErrorCode.DATABASE_CONNECTION_ERROR,
-    storage_context: Optional[Dict[str, Any]] = None,
-    suggestions: Optional[list] = None,
-    cause: Optional[Exception] = None,
-) -> None:
-    """Raise a standardized storage error.
-
-    Args:
-        message: Error message
-        error_code: Specific storage error code
-        storage_context: Context information for the storage error
-        suggestions: List of suggested solutions
-        cause: Original exception that caused this error
-    """
-    error = StorageError(
-        message=message,
-        error_code=error_code,
-        context=storage_context,
-        suggestions=suggestions,
-        cause=cause,
-    )
-    logger.error("Storage error raised: %s", str(error))
-    raise error
-
-
-def raise_optimization_error(
-    reason: str, params: Dict[str, Any], cause: Optional[Exception] = None
-) -> None:
-    """Raise a standardized optimization error.
-
-    Args:
-        reason: Reason for optimization failure
-        params: Parameters used in failed optimization
-        cause: Original exception that caused this error
-    """
-    if "no suitable instances" in reason.lower():
-        error_code = ErrorCode.NO_SUITABLE_INSTANCES
-        suggestions = [
-            "Try adjusting your requirements (cores, memory, region)",
-            "Consider enabling ARM instances",
-            "Try a different optimization mode",
-            "Check if the region has available instance types",
-        ]
-    else:
-        error_code = ErrorCode.OPTIMIZATION_FAILED
-        suggestions = [
-            "Check your optimization parameters",
-            "Verify data is fresh and available",
-            "Try a different region or instance family",
-        ]
-
-    error = OptimizationError(
-        message=f"Optimization failed: {reason}",
-        error_code=error_code,
-        optimization_params=params,
-        suggestions=suggestions,
-        cause=cause,
-    )
-    logger.error("Optimization error raised: %s", str(error))
-    raise error
-
-
-def raise_network_error(
-    message: str,
-    error_code: ErrorCode = ErrorCode.NETWORK_REQUEST_ERROR,
-    network_context: Optional[Dict[str, Any]] = None,
-    suggestions: Optional[list] = None,
-    cause: Optional[Exception] = None,
-) -> None:
-    """Raise a standardized network error.
-
-    Args:
-        message: Error message
-        error_code: Specific network error code
-        network_context: Context information for the network error
-        suggestions: List of suggested solutions
-        cause: Original exception that caused this error
-    """
-    error = NetworkError(
-        message=message,
-        error_code=error_code,
-        context=network_context,
-        suggestions=suggestions,
-        cause=cause,
-    )
-    logger.error("Network error raised: %s", str(error))
-    raise error
-
-
-def raise_data_error(
-    message: str,
-    error_code: ErrorCode = ErrorCode.DATA_VALIDATION_ERROR,
-    data_context: Optional[Dict[str, Any]] = None,
-    suggestions: Optional[list] = None,
-    cause: Optional[Exception] = None,
-) -> None:
-    """Raise a standardized data error.
-
-    Args:
-        message: Error message
-        error_code: Specific data error code
-        data_context: Context information for the data error
-        suggestions: List of suggested solutions
-        cause: Original exception that caused this error
-    """
-    error = DataError(
-        message=message,
-        error_code=error_code,
-        context=data_context,
-        suggestions=suggestions,
-        cause=cause,
-    )
-    logger.error("Data error raised: %s", str(error))
-    raise error
-
-
-def raise_configuration_error(
-    message: str,
-    error_code: ErrorCode = ErrorCode.CONFIGURATION_ERROR,
-    config_context: Optional[Dict[str, Any]] = None,
-    suggestions: Optional[list] = None,
-    cause: Optional[Exception] = None,
-) -> None:
-    """Raise a standardized configuration error.
-
-    Args:
-        message: Error message
-        error_code: Specific configuration error code
-        config_context: Context information for the configuration error
-        suggestions: List of suggested solutions
-        cause: Original exception that caused this error
-    """
-    error = ConfigurationError(
-        message=message,
-        error_code=error_code,
-        context=config_context,
-        suggestions=suggestions,
-        cause=cause,
-    )
-    logger.error("Configuration error raised: %s", str(error))
-    raise error

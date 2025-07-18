@@ -3,7 +3,6 @@ import pytest
 import threading
 from unittest.mock import Mock, patch
 from spot_optimizer.spot_optimizer import SpotOptimizerFacade
-from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.exceptions import OptimizationError, ValidationError
 
 
@@ -111,7 +110,7 @@ def test_optimize_success(facade, mock_engine, mock_core):
         arm_instances=True,
         instance_family=None,
         emr_version=None,
-        mode=Mode.BALANCED.value,
+        mode="balanced",
     )
     assert result == mock_result
 

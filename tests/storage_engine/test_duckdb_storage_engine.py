@@ -117,7 +117,7 @@ def test_error_handling(db):
         db.query_data("SELECT * FROM nonexistent_table")
 
     # Test storing invalid data
-    with pytest.raises(StorageError, match="Failed to store data"):
+    with pytest.raises(StorageError, match="Failed to store data in database"):
         db.store_data({"invalid": "data"})
 
 
@@ -170,7 +170,6 @@ def test_table_name_validation():
         with pytest.raises(ValidationError) as exc_info:
             db._validate_table_name(invalid_table)
         assert "Invalid table name" in str(exc_info.value)
-        assert "Use one of the valid tables" in str(exc_info.value)
 
 
 def test_clear_data_sql_injection_prevention(db, sample_data):

@@ -12,8 +12,6 @@ from spot_optimizer.exceptions import (
     ValidationError,
     StorageError,
     ErrorCode,
-    raise_validation_error,
-    raise_storage_error,
 )
 
 
@@ -52,17 +50,10 @@ class DuckDBStorage(StorageEngine):
         :raises ValidationError: If the table name is not in the whitelist
         """
         if table_name not in self.VALID_TABLES:
-            raise_validation_error(
-                message=f"Invalid table name: {table_name}",
+            raise ValidationError(
+                f"Invalid table name: {table_name}",
                 error_code=ErrorCode.INVALID_TABLE_NAME,
-                validation_context={
-                    "invalid_table": table_name,
-                    "valid_tables": list(sorted(self.VALID_TABLES)),
-                },
-                suggestions=[
-                    f"Use one of the valid tables: {', '.join(sorted(self.VALID_TABLES))}",
-                    "Verify the table name is correctly spelled",
-                ],
+                context={"invalid_table": table_name},
             )
 
     def connect(self) -> None:
@@ -127,10 +118,10 @@ class DuckDBStorage(StorageEngine):
             try:
                 self.conn.execute(create_sql)
             except Exception as e:
-                raise_storage_error(
-                    message=f"Failed to create table '{table_name}'",
+                raise StorageError(
+                    f"Failed to create table '{table_name}'",
                     error_code=ErrorCode.TABLE_CREATION_ERROR,
-                    storage_context={"table_name": table_name},
+                    context={"table_name": table_name},
                     cause=e,
                 )
 
@@ -225,8 +216,8 @@ class DuckDBStorage(StorageEngine):
             )
 
         except Exception as e:
-            raise_storage_error(
-                message="Failed to store data in database",
+            raise StorageError(
+                "Failed to store data in database",
                 error_code=ErrorCode.DATABASE_STORE_ERROR,
                 cause=e,
             )
@@ -257,10 +248,10 @@ class DuckDBStorage(StorageEngine):
                 return self.conn.execute(query, params).fetchdf()
             return self.conn.execute(query).fetchdf()
         except Exception as e:
-            raise_storage_error(
-                message=f"Database query failed: {query}",
+            raise StorageError(
+                f"Database query failed: {query}",
                 error_code=ErrorCode.DATABASE_QUERY_ERROR,
-                storage_context={"query": query, "params": params},
+                context={"query": query, "params": params},
                 cause=e,
             )
 
@@ -294,9 +285,9 @@ class DuckDBStorage(StorageEngine):
                 # Re-raise validation errors as-is
                 raise
             except Exception as e:
-                raise_storage_error(
-                    message=f"Failed to clear table '{table}'",
+                raise StorageError(
+                    f"Failed to clear table '{table}'",
                     error_code=ErrorCode.DATABASE_CLEAR_ERROR,
-                    storage_context={"table_name": table},
+                    context={"table_name": table},
                     cause=e,
                 )
