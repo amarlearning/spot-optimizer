@@ -44,13 +44,13 @@ class AwsSpotAdvisorData:
                 "https",
             ]:
                 raise ValidationError(
-                    "Invalid URL format",
+                    "URL format",
                     error_code=ErrorCode.INVALID_URL,
                     context={"url": url},
                 )
         except Exception as e:
             raise ValidationError(
-                f"Invalid URL: {e}",
+                f"URL: {e}",
                 error_code=ErrorCode.INVALID_URL,
                 context={"url": url},
                 cause=e,
@@ -70,7 +70,7 @@ class AwsSpotAdvisorData:
                 return response.json()
             except ValueError as e:
                 raise DataError(
-                    f"Failed to parse JSON response: {e}",
+                    f"parse JSON response: {e}",
                     error_code=ErrorCode.DATA_INVALID_FORMAT,
                     cause=e,
                 )
@@ -81,7 +81,7 @@ class AwsSpotAdvisorData:
                     time.sleep(2**attempt)
 
         raise NetworkError(
-            f"Failed to fetch data after {self.max_retries} attempts",
+            f"fetch data after {self.max_retries} attempts",
             error_code=ErrorCode.NETWORK_REQUEST_FAILED,
             cause=last_exception,
         )

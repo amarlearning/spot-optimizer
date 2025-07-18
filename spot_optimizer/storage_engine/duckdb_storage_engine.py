@@ -51,7 +51,7 @@ class DuckDBStorage(StorageEngine):
         """
         if table_name not in self.VALID_TABLES:
             raise ValidationError(
-                f"Invalid table name: {table_name}",
+                f"table name: {table_name}",
                 error_code=ErrorCode.INVALID_TABLE_NAME,
                 context={"invalid_table": table_name},
             )
@@ -119,7 +119,7 @@ class DuckDBStorage(StorageEngine):
                 self.conn.execute(create_sql)
             except Exception as e:
                 raise StorageError(
-                    f"Failed to create table '{table_name}'",
+                    f"create table '{table_name}'",
                     error_code=ErrorCode.TABLE_CREATION_ERROR,
                     context={"table_name": table_name},
                     cause=e,
@@ -217,7 +217,7 @@ class DuckDBStorage(StorageEngine):
 
         except Exception as e:
             raise StorageError(
-                "Failed to store data in database",
+                "store data in database",
                 error_code=ErrorCode.DATABASE_STORE_ERROR,
                 cause=e,
             )
@@ -286,7 +286,7 @@ class DuckDBStorage(StorageEngine):
                 raise
             except Exception as e:
                 raise StorageError(
-                    f"Failed to clear table '{table}'",
+                    f"clear table '{table}'",
                     error_code=ErrorCode.DATABASE_CLEAR_ERROR,
                     context={"table_name": table},
                     cause=e,
