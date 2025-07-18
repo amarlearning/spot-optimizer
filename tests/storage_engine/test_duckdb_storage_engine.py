@@ -145,3 +145,99 @@ def test_no_connection_operations():
     with pytest.raises(RuntimeError) as exc_info:
         db.clear_data()
     assert "No database connection" in str(exc_info.value)
+
+
+def test_table_name_validation():
+    """Test table name validation against whitelist."""
+    db = DuckDBStorage(":memory:")
+
+    # Valid table names should not raise an exception
+    for table_name in db.VALID_TABLES:
+        db._validate_table_name(table_name)  # Should not raise
+
+    # Invalid table names should raise ValueError
+    invalid_tables = [
+        "users; DROP TABLE instance_types; --",
+        "' OR '1'='1",
+        "nonexistent_table",
+        "test_table",
+        "malicious_table",
+        "",
+        "SELECT * FROM users",
+        "instance_types; DELETE FROM ranges; --",
+    ]
+
+    for invalid_table in invalid_tables:
+        with pytest.raises(ValueError) as exc_info:
+            db._validate_table_name(invalid_table)
+        assert "Invalid table name" in str(exc_info.value)
+        assert "Valid tables are" in str(exc_info.value)
+
+
+def test_clear_data_sql_injection_prevention(db, sample_data):
+    """Test that clear_data is protected against SQL injection."""
+    # Store some data first
+    db.store_data(sample_data)
+
+    # Verify data exists
+    result = db.query_data("SELECT COUNT(*) as count FROM instance_types")
+    assert result["count"].iloc[0] > 0
+
+    # Clear data using the secure method
+    db.clear_data()
+
+    # Verify all tables are empty
+    tables = [
+        "cache_timestamp",
+        "global_rate",
+        "instance_types",
+        "ranges",
+        "spot_advisor",
+    ]
+    for table in tables:
+        result = db.query_data(f"SELECT COUNT(*) as count FROM {table}")
+        assert result["count"].iloc[0] == 0
+
+
+def test_valid_tables_constant():
+    """Test that VALID_TABLES contains all expected table names."""
+    db = DuckDBStorage(":memory:")
+
+    expected_tables = {
+        "cache_timestamp",
+        "global_rate",
+        "instance_types",
+        "ranges",
+        "spot_advisor",
+    }
+
+    assert db.VALID_TABLES == expected_tables
+    assert len(db.VALID_TABLES) == 5
+
+
+def test_backward_compatibility_clear_data(db, sample_data):
+    """Test that the secure clear_data method maintains backward compatibility."""
+    # Store sample data
+    db.store_data(sample_data)
+
+    # Verify data exists before clearing
+    result = db.query_data("SELECT COUNT(*) as count FROM instance_types")
+    assert result["count"].iloc[0] == 2
+
+    result = db.query_data("SELECT COUNT(*) as count FROM ranges")
+    assert result["count"].iloc[0] == 2
+
+    # Clear data - this should work exactly as before
+    db.clear_data()
+
+    # Verify all tables are empty (same behavior as before)
+    tables = [
+        "cache_timestamp",
+        "global_rate",
+        "instance_types",
+        "ranges",
+        "spot_advisor",
+    ]
+    for table in tables:
+        result = db.query_data(f"SELECT COUNT(*) as count FROM {table}")
+        assert result["count"].iloc[0] == 0

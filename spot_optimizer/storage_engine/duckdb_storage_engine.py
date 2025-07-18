@@ -13,6 +13,15 @@ from spot_optimizer.storage_engine.storage_engine import StorageEngine
 class DuckDBStorage(StorageEngine):
     """DuckDB implementation of the storage engine."""
 
+    # Whitelist of valid table names to prevent SQL injection
+    VALID_TABLES = {
+        "cache_timestamp",
+        "global_rate",
+        "instance_types",
+        "ranges",
+        "spot_advisor",
+    }
+
     def __init__(self, db_path: str = ":memory:"):
         """
         Initialize DuckDB storage.
@@ -27,6 +36,18 @@ class DuckDBStorage(StorageEngine):
 
         with open(metadata_path) as f:
             self.instance_metadata = json.load(f)
+
+    def _validate_table_name(self, table_name: str) -> None:
+        """
+        Validate that the table name is in the whitelist to prevent SQL injection.
+
+        :param table_name: The table name to validate
+        :raises ValueError: If the table name is not in the whitelist
+        """
+        if table_name not in self.VALID_TABLES:
+            raise ValueError(
+                f"Invalid table name: {table_name}. Valid tables are: {', '.join(sorted(self.VALID_TABLES))}"
+            )
 
     def connect(self) -> None:
         """Establish connection to DuckDB."""
@@ -191,19 +212,22 @@ class DuckDBStorage(StorageEngine):
         """
         Clear all data from DuckDB tables.
         :raises RuntimeError: If no database connection exists.
+        :raises ValueError: If any table name is invalid.
         """
         if not self.conn:
             raise RuntimeError("No database connection")
 
-        tables = [
-            "cache_timestamp",
-            "global_rate",
-            "instance_types",
-            "ranges",
-            "spot_advisor",
-        ]
+        # Use the whitelist directly to ensure all table names are safe
+        tables = list(self.VALID_TABLES)
+
         for table in tables:
             try:
+                # Validate table name against whitelist (additional safety check)
+                self._validate_table_name(table)
+                # Since table name is validated against whitelist, it's safe to use in SQL
                 self.conn.execute(f"DELETE FROM {table}")
+            except ValueError as e:
+                # Re-raise validation errors
+                raise e
             except Exception as e:
                 raise RuntimeError(f"Failed to clear table {table}: {str(e)}")
