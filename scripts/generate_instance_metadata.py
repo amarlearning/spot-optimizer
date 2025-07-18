@@ -9,13 +9,19 @@ import sys
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class InstanceMetadataGenerator:
     def __init__(self):
         self.url = "https://aws.amazon.com/ec2/instance-types/"
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
-        self.output_path = Path(__file__).parent.parent / "spot_optimizer" / "resources" / "instance_metadata.json"
+        self.output_path = (
+            Path(__file__).parent.parent
+            / "spot_optimizer"
+            / "resources"
+            / "instance_metadata.json"
+        )
 
     def fetch_page(self) -> str:
         try:
@@ -28,22 +34,22 @@ class InstanceMetadataGenerator:
 
     def determine_architecture(self, instance_type: str) -> str:
         # More accurate architecture detection
-        if any(x in instance_type.lower() for x in ['a1', 'c6g', 'm6g', 'r6g', 't4g']):
+        if any(x in instance_type.lower() for x in ["a1", "c6g", "m6g", "r6g", "t4g"]):
             return "arm64"
         return "x86_64"
 
     def determine_storage_type(self, storage_info: str) -> str:
         storage_info = storage_info.lower()
-        if any(x in storage_info for x in ['nvme', 'ssd']):
+        if any(x in storage_info for x in ["nvme", "ssd"]):
             return "ssd"
         return "ebs"
 
     def parse_instance_data(self, html: str) -> Dict[str, Any]:
         soup = BeautifulSoup(html, "html.parser")
         instances = {}
-        
+
         for section in soup.find_all("tr"):
-            cells = section.find_all('td')
+            cells = section.find_all("td")
             if len(cells) < 6:
                 continue
 
@@ -63,7 +69,7 @@ class InstanceMetadataGenerator:
                 "arch": self.determine_architecture(instance_type),
                 "storage": self.determine_storage_type(storage),
                 "vcpu": vcpu,
-                "memory": memory
+                "memory": memory,
             }
 
         return instances
@@ -88,11 +94,11 @@ class InstanceMetadataGenerator:
         try:
             # Create parent directories if they don't exist
             self.output_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             # Save with consistent formatting
-            with self.output_path.open('w') as f:
+            with self.output_path.open("w") as f:
                 json.dump(instances, f, indent=4, sort_keys=True)
-            
+
             logger.info(f"Successfully saved metadata for {len(instances)} instances")
         except IOError as e:
             logger.error(f"Failed to save metadata: {e}")
@@ -102,13 +108,14 @@ class InstanceMetadataGenerator:
         logger.info("Starting instance metadata generation...")
         html = self.fetch_page()
         instances = self.parse_instance_data(html)
-        
+
         if self.validate_data(instances):
             self.save_metadata(instances)
             logger.info("Instance metadata generation completed successfully")
         else:
             logger.error("Data validation failed")
             sys.exit(1)
+
 
 if __name__ == "__main__":
     generator = InstanceMetadataGenerator()

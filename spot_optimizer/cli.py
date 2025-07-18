@@ -7,14 +7,14 @@ from spot_optimizer import optimize
 def validate_positive_int(value: str, param_name: str) -> int:
     """
     Validate that the value is a positive integer.
-    
+
     Args:
         value: The string value to validate
         param_name: Name of the parameter for error messages
-    
+
     Returns:
         int: The validated positive integer
-        
+
     Raises:
         ArgumentTypeError: If value is not a positive integer
     """
@@ -34,10 +34,10 @@ def validate_positive_int(value: str, param_name: str) -> int:
 def parse_args(args=None):
     """
     Parse command line arguments.
-    
+
     Args:
         args: List of arguments to parse. Defaults to sys.argv[1:] if None.
-    
+
     Returns:
         argparse.Namespace: Parsed command line arguments
     """

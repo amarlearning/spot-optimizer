@@ -6,7 +6,7 @@ import pandas as pd
 
 class StorageEngine(ABC):
     """Abstract base class for storage engine implementations."""
-    
+
     @abstractmethod
     def connect(self) -> None:
         """Establish connection to the storage."""
@@ -26,7 +26,9 @@ class StorageEngine(ABC):
         pass
 
     @abstractmethod
-    def query_data(self, query: str, params: Optional[List[Any]] = None) -> pd.DataFrame:
+    def query_data(
+        self, query: str, params: Optional[List[Any]] = None
+    ) -> pd.DataFrame:
         """
         Query data from the storage engine.
         :param query: Query string appropriate for the storage engine.

@@ -1,6 +1,5 @@
 import logging
 import time
-from typing import Optional
 from urllib.parse import urlparse
 
 import requests
@@ -8,9 +7,10 @@ from requests.exceptions import RequestException
 
 logger = logging.getLogger(__name__)
 
+
 class AwsSpotAdvisorData:
     """Fetches AWS Spot Advisor data."""
-    
+
     def __init__(
         self,
         url: str = "https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json",
@@ -43,33 +43,32 @@ class AwsSpotAdvisorData:
     def fetch_data(self) -> dict:
         """
         Fetch the Spot Advisor data from AWS.
-        
+
         Returns:
             dict: The fetched data.
-            
+
         Raises:
             RequestException: If the request fails after all retries or if JSON parsing fails.
         """
         last_exception = None
         for attempt in range(self.max_retries):
             try:
-                response = requests.get(
-                    self.url,
-                    timeout=self.request_timeout
-                )
+                response = requests.get(self.url, timeout=self.request_timeout)
                 response.raise_for_status()
                 try:
                     return response.json()
                 except ValueError as e:
-                    raise RequestException(f"Failed to parse JSON response: {str(e)}") from e
+                    raise RequestException(
+                        f"Failed to parse JSON response: {str(e)}"
+                    ) from e
             except RequestException as e:
                 last_exception = e
                 logger.warning(
                     f"Attempt {attempt + 1}/{self.max_retries} failed: {str(e)}"
                 )
                 if attempt < self.max_retries - 1:
-                    time.sleep(2 ** attempt)  # Exponential backoff
-                
+                    time.sleep(2**attempt)  # Exponential backoff
+
         message = f"Failed to fetch data after {self.max_retries} attempts"
         logger.error(message, exc_info=last_exception)
         raise RequestException(message) from last_exception

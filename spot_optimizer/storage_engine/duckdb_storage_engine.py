@@ -20,8 +20,10 @@ class DuckDBStorage(StorageEngine):
         """
         self.db_path = db_path
         self.conn: Optional[duckdb.DuckDBPyConnection] = None
-        
-        metadata_path = os.path.join(Path(__file__).parent.parent, "resources", "instance_metadata.json")
+
+        metadata_path = os.path.join(
+            Path(__file__).parent.parent, "resources", "instance_metadata.json"
+        )
 
         with open(metadata_path) as f:
             self.instance_metadata = json.load(f)
@@ -73,7 +75,7 @@ class DuckDBStorage(StorageEngine):
                     s INTEGER,
                     r INTEGER
                 )
-            """
+            """,
         }
 
         for table_name, create_sql in tables.items():
@@ -94,31 +96,32 @@ class DuckDBStorage(StorageEngine):
         try:
             # Store timestamp
             self.conn.execute(
-                "INSERT INTO cache_timestamp (timestamp) VALUES (?)",
-                [datetime.now()]
+                "INSERT INTO cache_timestamp (timestamp) VALUES (?)", [datetime.now()]
             )
 
             # Store global rate
             self.conn.execute(
                 "INSERT INTO global_rate (global_rate) VALUES (?)",
-                [data["global_rate"]]
+                [data["global_rate"]],
             )
-            
+
             # Store instance data with metadata
             instance_data = []
             for key, value in data["instance_types"].items():
                 # Get storage and arch from metadata, fallback to defaults if not found
                 metadata = self.instance_metadata.get(key, {})
-                instance_data.append((
-                    key,
-                    key.split(".")[0],
-                    value["cores"],
-                    value["ram_gb"],
-                    metadata.get("storage", "ebs"),
-                    metadata.get("arch", "x86_64"),
-                    value.get("emr", False),
-                    value.get("emr_min_version", None)
-                ))
+                instance_data.append(
+                    (
+                        key,
+                        key.split(".")[0],
+                        value["cores"],
+                        value["ram_gb"],
+                        metadata.get("storage", "ebs"),
+                        metadata.get("arch", "x86_64"),
+                        value.get("emr", False),
+                        value.get("emr_min_version", None),
+                    )
+                )
 
             self.conn.executemany(
                 """
@@ -128,7 +131,7 @@ class DuckDBStorage(StorageEngine):
                     emr_compatible, emr_min_version
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                instance_data
+                instance_data,
             )
 
             # Store ranges data
@@ -138,7 +141,7 @@ class DuckDBStorage(StorageEngine):
             ]
             self.conn.executemany(
                 "INSERT INTO ranges (index, label, dots, max) VALUES (?, ?, ?, ?)",
-                ranges_data
+                ranges_data,
             )
 
             # Fix: Store spot advisor data with correct structure
@@ -146,23 +149,27 @@ class DuckDBStorage(StorageEngine):
             for region, os_data in data["spot_advisor"].items():
                 for os_name, instance_data in os_data.items():
                     for instance_type, scores in instance_data.items():
-                        spot_advisor_data.append((
-                            region,          # e.g., "ap-southeast-4"
-                            os_name,         # e.g., "Linux"
-                            instance_type,   # e.g., "r6i.24xlarge"
-                            scores["s"],     # spot score
-                            scores["r"]      # rate
-                        ))
+                        spot_advisor_data.append(
+                            (
+                                region,  # e.g., "ap-southeast-4"
+                                os_name,  # e.g., "Linux"
+                                instance_type,  # e.g., "r6i.24xlarge"
+                                scores["s"],  # spot score
+                                scores["r"],  # rate
+                            )
+                        )
 
             self.conn.executemany(
                 "INSERT INTO spot_advisor (region, os, instance_types, s, r) VALUES (?, ?, ?, ?, ?)",
-                spot_advisor_data
+                spot_advisor_data,
             )
 
         except Exception as e:
             raise RuntimeError(f"Failed to store data: {str(e)}")
 
-    def query_data(self, query: str, params: Optional[List[Any]] = None) -> pd.DataFrame:
+    def query_data(
+        self, query: str, params: Optional[List[Any]] = None
+    ) -> pd.DataFrame:
         """
         Query data from DuckDB.
         :param query: SQL query string.
@@ -188,7 +195,13 @@ class DuckDBStorage(StorageEngine):
         if not self.conn:
             raise RuntimeError("No database connection")
 
-        tables = ["cache_timestamp", "global_rate", "instance_types", "ranges", "spot_advisor"]
+        tables = [
+            "cache_timestamp",
+            "global_rate",
+            "instance_types",
+            "ranges",
+            "spot_advisor",
+        ]
         for table in tables:
             try:
                 self.conn.execute(f"DELETE FROM {table}")

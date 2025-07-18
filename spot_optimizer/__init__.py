@@ -3,7 +3,8 @@ from spot_optimizer.spot_optimizer import SpotOptimizer
 
 default_optimizer = SpotOptimizer()
 
-__all__ = ['optimize', 'Mode', 'SpotOptimizer']
+__all__ = ["optimize", "Mode", "SpotOptimizer"]
+
 
 def optimize(
     cores: int,
@@ -17,7 +18,7 @@ def optimize(
 ) -> dict:
     """
     Optimize spot instance configuration based on requirements.
-    
+
     Args:
         cores: Number of CPU cores required
         memory: Amount of RAM required (in GB)
@@ -27,10 +28,10 @@ def optimize(
         instance_family: List of instance families to consider
         emr_version: EMR version if using with EMR
         mode: Optimization mode (default: BALANCED)
-        
+
     Returns:
         dict: Optimized instance configuration
-    
+
     Example:
         >>> from spot_optimizer import optimize
         >>> config = optimize(
