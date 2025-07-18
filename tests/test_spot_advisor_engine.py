@@ -1,120 +1,108 @@
 import pytest
+from unittest.mock import Mock, patch
+from datetime import datetime, timedelta
 import pandas as pd
 
-from datetime import datetime, timedelta
-from unittest.mock import Mock
-
-from spot_optimizer.spot_advisor_engine import (
-    should_refresh_data,
-    refresh_spot_data,
-    ensure_fresh_data,
-    CACHE_EXPIRY_SECONDS,
+from spot_optimizer.spot_advisor_engine import SpotAdvisorEngine, CACHE_EXPIRY_SECONDS
+from spot_optimizer.exceptions import (
+    StorageError,
+    DataError,
+    NetworkError,
+    ErrorCode,
 )
-from spot_optimizer.exceptions import StorageError, NetworkError
-
-
-@pytest.fixture
-def mock_db():
-    """Mock database with required methods."""
-    return Mock()
-
 
 @pytest.fixture
 def mock_advisor():
-    """Mock spot advisor with required methods."""
+    """Fixture for a mocked AWS Spot Advisor."""
     return Mock()
 
+@pytest.fixture
+def mock_db():
+    """Fixture for a mocked database."""
+    db = Mock()
+    db.query_data = Mock()
+    db.clear_data = Mock()
+    db.store_data = Mock()
+    return db
 
 @pytest.fixture
-def sample_spot_data():
-    """Sample spot advisor data."""
-    return {
-        "global_rate": "0.1",
-        "instance_types": {"m5.xlarge": {"cores": 4, "ram_gb": 16.0}},
-        "ranges": [{"index": 1, "label": "low", "dots": 1, "max": 5}],
-    }
+def engine(mock_advisor, mock_db):
+    """Fixture for SpotAdvisorEngine with mocked dependencies."""
+    return SpotAdvisorEngine(advisor=mock_advisor, db=mock_db)
 
-
-def test_should_refresh_data_empty_db(mock_db):
-    """Test should_refresh_data when database is empty."""
+def test_should_refresh_data_empty_timestamp(engine, mock_db):
+    """Test that data should be refreshed if no timestamp is found."""
     mock_db.query_data.return_value = pd.DataFrame()
+    assert engine.should_refresh_data() is True
 
-    assert should_refresh_data(mock_db) is True
-    mock_db.query_data.assert_called_once()
+def test_should_refresh_data_expired_cache(engine, mock_db):
+    """Test that data should be refreshed if the cache is expired."""
+    expired_time = datetime.now() - timedelta(seconds=CACHE_EXPIRY_SECONDS + 1)
+    mock_db.query_data.return_value = pd.DataFrame({"timestamp": [expired_time]})
+    assert engine.should_refresh_data() is True
 
+def test_should_not_refresh_data_fresh_cache(engine, mock_db):
+    """Test that data should not be refreshed if the cache is fresh."""
+    fresh_time = datetime.now() - timedelta(seconds=CACHE_EXPIRY_SECONDS - 1)
+    mock_db.query_data.return_value = pd.DataFrame({"timestamp": [fresh_time]})
+    assert engine.should_refresh_data() is False
 
-def test_should_refresh_data_expired(mock_db):
-    """Test should_refresh_data when cache is expired."""
-    old_timestamp = datetime.now() - timedelta(seconds=CACHE_EXPIRY_SECONDS + 100)
-    mock_db.query_data.return_value = pd.DataFrame({"timestamp": [old_timestamp]})
+def test_should_refresh_on_storage_error(engine, mock_db):
+    """Test that data should be refreshed if a storage error occurs."""
+    mock_db.query_data.side_effect = StorageError("DB connection failed")
+    assert engine.should_refresh_data() is True
 
-    assert should_refresh_data(mock_db) is True
-
-
-def test_should_refresh_data_fresh(mock_db):
-    """Test should_refresh_data when cache is fresh."""
-    fresh_timestamp = datetime.now() - timedelta(seconds=CACHE_EXPIRY_SECONDS - 100)
-    mock_db.query_data.return_value = pd.DataFrame({"timestamp": [fresh_timestamp]})
-
-    assert should_refresh_data(mock_db) is False
-
-
-def test_should_refresh_data_db_error(mock_db):
-    """Test should_refresh_data handles database errors."""
-    mock_db.query_data.side_effect = StorageError("Database error")
-
-    assert should_refresh_data(mock_db) is True
-
-
-def test_refresh_spot_data(mock_advisor, mock_db, sample_spot_data):
-    """Test refresh_spot_data functionality."""
-    mock_advisor.fetch_data.return_value = sample_spot_data
-
-    refresh_spot_data(mock_advisor, mock_db)
-
+def test_refresh_spot_data_success(engine, mock_advisor, mock_db):
+    """Test successful data refresh."""
+    mock_data = {"regions": {}}
+    mock_advisor.fetch_data.return_value = mock_data
+    engine.refresh_spot_data()
     mock_advisor.fetch_data.assert_called_once()
     mock_db.clear_data.assert_called_once()
-    mock_db.store_data.assert_called_once_with(sample_spot_data)
+    mock_db.store_data.assert_called_once_with(mock_data)
 
+@pytest.mark.parametrize(
+    "exception_type", [NetworkError, StorageError, DataError]
+)
+def test_refresh_spot_data_propagates_known_errors(
+    engine, mock_advisor, exception_type
+):
+    """Test that known errors are propagated during data refresh."""
+    mock_advisor.fetch_data.side_effect = exception_type("Test Error")
+    with pytest.raises(exception_type):
+        engine.refresh_spot_data()
 
-def test_refresh_spot_data_error(mock_advisor, mock_db):
-    """Test refresh_spot_data error handling."""
-    mock_advisor.fetch_data.side_effect = NetworkError("Fetch error")
+def test_refresh_spot_data_unexpected_error(engine, mock_advisor):
+    """Test that unexpected errors are wrapped in DataError."""
+    mock_advisor.fetch_data.side_effect = Exception("Unexpected failure")
+    with pytest.raises(DataError) as exc_info:
+        engine.refresh_spot_data()
+    assert exc_info.value.error_code == ErrorCode.DATA_REFRESH_FAILED
 
-    with pytest.raises(NetworkError, match="Fetch error"):
-        refresh_spot_data(mock_advisor, mock_db)
+@patch("spot_optimizer.spot_advisor_engine.SpotAdvisorEngine.should_refresh_data")
+@patch("spot_optimizer.spot_advisor_engine.SpotAdvisorEngine.refresh_spot_data")
+def test_ensure_fresh_data_refreshes_when_needed(
+    mock_refresh, mock_should_refresh, engine
+):
+    """Test that fresh data is ensured when refresh is needed."""
+    mock_should_refresh.return_value = True
+    engine.ensure_fresh_data()
+    mock_refresh.assert_called_once()
 
+@patch("spot_optimizer.spot_advisor_engine.SpotAdvisorEngine.should_refresh_data")
+@patch("spot_optimizer.spot_advisor_engine.SpotAdvisorEngine.refresh_spot_data")
+def test_ensure_fresh_data_does_not_refresh_when_not_needed(
+    mock_refresh, mock_should_refresh, engine
+):
+    """Test that fresh data is not refreshed when not needed."""
+    mock_should_refresh.return_value = False
+    engine.ensure_fresh_data()
+    mock_refresh.assert_not_called()
 
-def test_ensure_fresh_data_when_needed(mock_advisor, mock_db, sample_spot_data):
-    """Test ensure_fresh_data when refresh is needed."""
-    mock_db.query_data.return_value = pd.DataFrame()  # Empty DB
-    mock_advisor.fetch_data.return_value = sample_spot_data
-
-    ensure_fresh_data(mock_advisor, mock_db)
-
-    mock_advisor.fetch_data.assert_called_once()
-    mock_db.clear_data.assert_called_once()
-    mock_db.store_data.assert_called_once_with(sample_spot_data)
-
-
-def test_ensure_fresh_data_when_not_needed(mock_advisor, mock_db):
-    """Test ensure_fresh_data when refresh is not needed."""
-    fresh_timestamp = datetime.now() - timedelta(seconds=CACHE_EXPIRY_SECONDS - 100)
-    mock_db.query_data.return_value = pd.DataFrame({"timestamp": [fresh_timestamp]})
-
-    ensure_fresh_data(mock_advisor, mock_db)
-
-    mock_advisor.fetch_data.assert_not_called()
-    mock_db.clear_data.assert_not_called()
-    mock_db.store_data.assert_not_called()
-
-
-def test_ensure_fresh_data_error_handling(mock_advisor, mock_db):
-    """Test ensure_fresh_data error handling."""
-    mock_db.query_data.side_effect = StorageError("Database error")
-    mock_advisor.fetch_data.side_effect = NetworkError("Fetch error")
-
-    # DB error is treated as cache miss, so it will try to fetch,
-    # which will then fail with Fetch error
-    with pytest.raises(NetworkError, match="Fetch error"):
-        ensure_fresh_data(mock_advisor, mock_db)
+@patch("spot_optimizer.spot_advisor_engine.SpotAdvisorEngine.should_refresh_data")
+def test_ensure_fresh_data_unexpected_error(mock_should_refresh, engine):
+    """Test that unexpected errors in ensure_fresh_data are wrapped."""
+    mock_should_refresh.side_effect = Exception("Chaos")
+    with pytest.raises(DataError) as exc_info:
+        engine.ensure_fresh_data()
+    assert exc_info.value.error_code == ErrorCode.DATA_REFRESH_FAILED

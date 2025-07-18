@@ -7,54 +7,47 @@ import pandas as pd
 from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
 from spot_optimizer.storage_engine.duckdb_storage_engine import DuckDBStorage
-from spot_optimizer.spot_advisor_engine import ensure_fresh_data
+from spot_optimizer.spot_advisor_engine import SpotAdvisorEngine
+from spot_optimizer.spot_optimizer_core import SpotOptimizerCore
 from spot_optimizer.validators import validate_optimization_params
 from spot_optimizer.logging_config import get_logger
-from spot_optimizer.exceptions import (
-    OptimizationError,
-    ErrorCode,
-    raise_optimization_error,
-)
 
 
 logger = get_logger(__name__)
 
 
-class SpotOptimizer:
-    """Manages spot instance optimization with cached data access."""
+class SpotOptimizerFacade:
+    """Facade for spot instance optimization, providing a simplified interface."""
 
-    _instance: Optional["SpotOptimizer"] = None
+    _instance: Optional["SpotOptimizerFacade"] = None
     _lock = threading.Lock()
 
-    @staticmethod
-    def get_default_db_path() -> str:
+    def __init__(
+        self,
+        spot_advisor: AwsSpotAdvisorData,
+        db: DuckDBStorage,
+        engine: SpotAdvisorEngine,
+        core: SpotOptimizerCore,
+    ):
         """
-        Get the database path in user data directory.
-
-        Returns:
-            str: Path to the database file in the user's data directory
+        Initialize the facade with its dependencies.
+        Args:
+            spot_advisor: Data source for spot instance information.
+            db: Database storage engine.
+            engine: Engine for managing data freshness.
+            core: Core optimization logic.
         """
-        app_name = "spot-optimizer"
-        app_author = "aws-samples"  # Change this to your organization name
-        data_dir = user_data_dir(app_name, app_author)
+        self.spot_advisor = spot_advisor
+        self.db = db
+        self.engine = engine
+        self.core = core
+        self._initialized = False
 
-        # Create directory if it doesn't exist
-        os.makedirs(data_dir, exist_ok=True)
-
-        return os.path.join(data_dir, "spot_advisor_data.db")
-
-    def __init__(self) -> None:
-        """Initialize the optimizer with its dependencies."""
-        self.db_path: str = self.get_default_db_path()
-        logger.debug(f"Using database path: {self.db_path}")
-
-        self.spot_advisor: AwsSpotAdvisorData = AwsSpotAdvisorData()
-        self.db: DuckDBStorage = DuckDBStorage(db_path=self.db_path)
-        self.db.connect()
-        self._initialized: bool = True
-
-    def __enter__(self) -> "SpotOptimizer":
+    def __enter__(self) -> "SpotOptimizerFacade":
         """Context manager entry."""
+        if not self._initialized:
+            self.db.connect()
+            self._initialized = True
         return self
 
     def __exit__(
@@ -68,29 +61,52 @@ class SpotOptimizer:
 
     def cleanup(self) -> None:
         """Cleanup database connection and resources."""
-        if hasattr(self, "db") and self.db is not None:
+        if self._initialized and hasattr(self, "db") and self.db is not None:
             try:
                 self.db.disconnect()
             except Exception as e:
                 logger.warning(f"Error during database cleanup: {e}")
             finally:
-                self.db = None  # type: ignore
+                self._initialized = False
 
     @classmethod
-    def get_instance(cls) -> "SpotOptimizer":
+    def get_instance(cls) -> "SpotOptimizerFacade":
         """
         Get or create the singleton instance using thread-safe double-checked locking.
-
         Returns:
-            SpotOptimizer: Singleton instance of the optimizer
+            SpotOptimizerFacade: Singleton instance of the optimizer facade.
         """
-        # First check without lock for performance
         if cls._instance is None:
             with cls._lock:
-                # Double-checked locking pattern
                 if cls._instance is None:
-                    cls._instance = cls()
+                    cls._instance = cls.create_default()
         return cls._instance
+
+    @classmethod
+    def create_default(cls) -> "SpotOptimizerFacade":
+        """Create a default instance of the facade with dependencies."""
+        db_path = cls.get_default_db_path()
+        logger.debug(f"Using database path: {db_path}")
+
+        spot_advisor = AwsSpotAdvisorData()
+        db = DuckDBStorage(db_path=db_path)
+        engine = SpotAdvisorEngine(spot_advisor, db)
+        core = SpotOptimizerCore(db)
+
+        return cls(spot_advisor, db, engine, core)
+
+    @staticmethod
+    def get_default_db_path() -> str:
+        """
+        Get the database path in user data directory.
+        Returns:
+            str: Path to the database file in the user's data directory.
+        """
+        app_name = "spot-optimizer"
+        app_author = "aws-samples"  # Change this to your organization name
+        data_dir = user_data_dir(app_name, app_author)
+        os.makedirs(data_dir, exist_ok=True)
+        return os.path.join(data_dir, "spot_advisor_data.db")
 
     @classmethod
     def reset_instance(cls) -> None:
@@ -100,7 +116,6 @@ class SpotOptimizer:
         """
         with cls._lock:
             if cls._instance is not None:
-                # Cleanup existing instance
                 cls._instance.cleanup()
                 cls._instance = None
 
@@ -111,158 +126,22 @@ class SpotOptimizer:
         region: str = "us-west-2",
         ssd_only: bool = False,
         arm_instances: bool = True,
-        instance_family: List[str] = None,
-        emr_version: str = None,
+        instance_family: Optional[List[str]] = None,
+        emr_version: Optional[str] = None,
         mode: str = Mode.BALANCED.value,
     ) -> Dict:
         """
         Optimize spot instance configuration based on requirements.
         """
         validate_optimization_params(cores, memory, mode)
-
-        try:
-            ensure_fresh_data(self.spot_advisor, self.db)
-
-            # Get instance count range based on mode
-            mode_ranges: Dict[str, Any] = Mode.calculate_ranges(cores, memory)
-
-            min_instances, max_instances = mode_ranges[mode]
-
-            query = """
-                WITH ranked_instances AS (
-                    SELECT 
-                        i.instance_type,
-                        i.cores,
-                        i.ram_gb,
-                        s.s as spot_score,
-                        s.r as interruption_rate,
-                        GREATEST(
-                            CEIL(CAST(? AS FLOAT) / i.cores),
-                            CEIL(CAST(? AS FLOAT) / i.ram_gb)
-                        ) as instances_needed
-                    FROM instance_types i
-                    JOIN spot_advisor s ON i.instance_type = s.instance_types
-                    WHERE 
-                        s.region = ?
-                        AND s.os = 'Linux'
-                        {storage_filter}
-                        {arch_filter}
-                        {family_filter}
-                )
-                SELECT 
-                    *,
-                    cores * instances_needed as total_cores,
-                    ram_gb * instances_needed as total_memory,
-                    ((cores * instances_needed) - ?) * 100.0 / ? as cpu_waste_pct,
-                    ((ram_gb * instances_needed) - ?) * 100.0 / ? as memory_waste_pct
-                FROM ranked_instances
-                WHERE 
-                    total_cores >= ?
-                    AND total_memory >= ?
-                    AND instances_needed BETWEEN ? AND ?  -- Apply mode-specific instance bounds
-                ORDER BY 
-                    interruption_rate ASC,
-                    spot_score DESC,
-                    (cpu_waste_pct + memory_waste_pct) ASC
-                LIMIT 1
-            """
-
-            # Add filters based on requirements
-            storage_filter: str = "AND i.storage_type = 'ssd'" if ssd_only else ""
-            arch_filter: str = (
-                "AND i.architecture != 'arm64'" if not arm_instances else ""
-            )
-            family_filter: str = ""
-
-            params: List[Union[str, int, float]] = [
-                cores,
-                memory,
-                region,  # Basic params
-                cores,
-                cores,  # CPU waste calculation
-                memory,
-                memory,  # Memory waste calculation
-                cores,
-                memory,  # Minimum resource requirements
-                min_instances,
-                max_instances,  # Mode-specific instance bounds
-            ]
-
-            if instance_family:
-                placeholders: str = ",".join(["?" for _ in instance_family])
-                family_filter = f"AND i.instance_family IN ({placeholders})"
-                params.extend(instance_family)
-
-            query = query.format(
-                storage_filter=storage_filter,
-                arch_filter=arch_filter,
-                family_filter=family_filter,
-            )
-
-            result: pd.DataFrame = self.db.query_data(query, params)
-
-            if len(result) == 0:
-                error_params: Dict[str, Any] = {
-                    "cores": cores,
-                    "memory": memory,
-                    "region": region,
-                    "mode": mode,
-                }
-
-                if instance_family:
-                    error_params["instance_family"] = instance_family
-                if emr_version:
-                    error_params["emr_version"] = emr_version
-                if ssd_only:
-                    error_params["ssd_only"] = ssd_only
-                if not arm_instances:
-                    error_params["arm_instances"] = arm_instances
-
-                param_strs: List[str] = []
-                for key, value in error_params.items():
-                    param_strs.append(f"{key} = {value}")
-
-                error_msg: str = (
-                    "No suitable instances found matching for "
-                    + " and ".join(param_strs)
-                )
-                raise_optimization_error(error_msg, error_params)
-
-            best_match: pd.Series = result.iloc[0]
-
-            return {
-                "instances": {
-                    "type": best_match["instance_type"],
-                    "count": int(best_match["instances_needed"]),
-                },
-                "mode": mode,
-                "total_cores": int(best_match["total_cores"]),
-                "total_ram": int(best_match["total_memory"]),
-                "reliability": {
-                    "spot_score": int(best_match["spot_score"]),
-                    "interruption_rate": int(best_match["interruption_rate"]),
-                },
-            }
-
-        except OptimizationError:
-            # Re-raise optimization errors as-is
-            raise
-        except Exception as e:
-            logger.error(f"Error optimizing instances: {e}")
-            # Wrap unexpected errors in OptimizationError
-            raise OptimizationError(
-                "Unexpected error during optimization",
-                error_code=ErrorCode.OPTIMIZATION_FAILED,
-                optimization_params={
-                    "cores": cores,
-                    "memory": memory,
-                    "region": region,
-                    "mode": mode,
-                },
-                suggestions=[
-                    "Check if the database is accessible",
-                    "Verify spot advisor data is available",
-                    "Try with different parameters",
-                ],
-                cause=e,
-            )
+        self.engine.ensure_fresh_data()
+        return self.core.optimize(
+            cores=cores,
+            memory=memory,
+            region=region,
+            ssd_only=ssd_only,
+            arm_instances=arm_instances,
+            instance_family=instance_family,
+            emr_version=emr_version,
+            mode=mode,
+        )

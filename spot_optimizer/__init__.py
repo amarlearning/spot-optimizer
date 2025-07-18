@@ -1,14 +1,6 @@
-from spot_optimizer.optimizer_mode import Mode
-from spot_optimizer.spot_optimizer import SpotOptimizer
-
-# Initialize centralized logging configuration
-from spot_optimizer.logging_config import setup_logging
-
-setup_logging()
-
-default_optimizer = SpotOptimizer()
-
-__all__ = ["optimize", "Mode", "SpotOptimizer"]
+from typing import Dict, List, Optional
+from .spot_optimizer import SpotOptimizerFacade
+from .optimizer_mode import Mode
 
 
 def optimize(
@@ -17,51 +9,35 @@ def optimize(
     region: str = "us-west-2",
     ssd_only: bool = False,
     arm_instances: bool = True,
-    instance_family: list[str] = None,
-    emr_version: str = None,
+    instance_family: Optional[List[str]] = None,
+    emr_version: Optional[str] = None,
     mode: str = Mode.BALANCED.value,
-) -> dict:
+) -> Dict:
     """
-    Optimize spot instance configuration based on requirements.
+    Public API function to get spot instance recommendations.
 
     Args:
-        cores: Number of CPU cores required
-        memory: Amount of RAM required (in GB)
-        region: AWS region (default: "us-west-2")
-        ssd_only: Whether to only consider instances with SSD storage
-        arm_instances: Whether to include ARM-based instances
-        instance_family: List of instance families to consider
-        emr_version: EMR version if using with EMR
-        mode: Optimization mode (default: BALANCED)
+        cores: Total number of CPU cores required.
+        memory: Total amount of RAM required (in GB).
+        region: AWS region to find instances in.
+        ssd_only: Filter for SSD-backed instances.
+        arm_instances: Include ARM-based instances if True.
+        instance_family: Filter by instance family.
+        emr_version: Optional EMR version for EMR workloads.
+        mode: Optimization mode.
 
     Returns:
-        dict: Optimized instance configuration
-
-    Example:
-        >>> from spot_optimizer import optimize
-        >>> config = optimize(
-        ...     cores=8,
-        ...     memory=32,
-        ...     region="us-east-1"
-        ... )
-        >>> print(config)
-        {
-            "instances": {
-                "type": "m6i.2xlarge",
-                "count": 1
-            },
-            "mode": "balanced",
-            "total_cores": 8,
-            "total_ram": 32
-        }
+        A dictionary containing the recommended instance type, count, and other details.
     """
-    return default_optimizer.optimize(
-        cores=cores,
-        memory=memory,
-        region=region,
-        ssd_only=ssd_only,
-        arm_instances=arm_instances,
-        instance_family=instance_family,
-        emr_version=emr_version,
-        mode=mode,
-    )
+    optimizer_facade = SpotOptimizerFacade.get_instance()
+    with optimizer_facade as facade:
+        return facade.optimize(
+            cores=cores,
+            memory=memory,
+            region=region,
+            ssd_only=ssd_only,
+            arm_instances=arm_instances,
+            instance_family=instance_family,
+            emr_version=emr_version,
+            mode=mode,
+        )
