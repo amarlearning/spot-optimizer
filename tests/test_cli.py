@@ -4,7 +4,7 @@ from argparse import ArgumentTypeError
 from unittest.mock import patch
 
 from spot_optimizer.cli import validate_positive_int, parse_args, main
-from spot_optimizer.exceptions import SpotOptimizerError
+from spot_optimizer.exceptions import SpotOptimizerBaseError
 
 
 @pytest.mark.parametrize(
@@ -126,7 +126,7 @@ def test_main_success(mock_optimize):
 @patch("spot_optimizer.cli.optimize")
 def test_main_error(mock_optimize, capsys):
     """Test main function with optimization error."""
-    mock_optimize.side_effect = SpotOptimizerError("No suitable instances found")
+    mock_optimize.side_effect = SpotOptimizerBaseError("No suitable instances found")
 
     with patch("sys.argv", ["spot-optimizer", "--cores", "8", "--memory", "32"]):
         with pytest.raises(SystemExit) as exc_info:
@@ -134,7 +134,7 @@ def test_main_error(mock_optimize, capsys):
 
         assert exc_info.value.code == 1
         captured = capsys.readouterr()
-        assert "SpotOptimizerError: No suitable instances found" in captured.err
+        assert "SpotOptimizerBaseError: No suitable instances found" in captured.err
 
 
 def test_validate_positive_int_directly():

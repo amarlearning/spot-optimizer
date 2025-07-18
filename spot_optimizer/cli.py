@@ -4,13 +4,13 @@ import sys
 from typing import List, Optional
 
 from spot_optimizer import optimize
-from spot_optimizer.exceptions import SpotOptimizerError
+from spot_optimizer.exceptions import SpotOptimizerBaseError
 from spot_optimizer.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
-def _handle_error(e: SpotOptimizerError) -> None:
+def _handle_error(e: SpotOptimizerBaseError) -> None:
     """Log and print error message, then exit."""
     print(f"{e.__class__.__name__}: {e}", file=sys.stderr)
 
@@ -118,7 +118,7 @@ def main() -> None:
         )
 
         print(json.dumps(result, indent=2))
-    except SpotOptimizerError as e:
+    except SpotOptimizerBaseError as e:
         _handle_error(e)
     except Exception as e:
         print(f"An unexpected error occurred: {e}", file=sys.stderr)

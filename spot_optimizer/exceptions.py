@@ -58,7 +58,7 @@ class ErrorCode(Enum):
     DATA_REFRESH_FAILED = 6004
 
 
-class SpotOptimizerError(Exception):
+class SpotOptimizerBaseError(Exception):
     """Base exception for all Spot Optimizer errors.
 
     :param message: Human-readable error message
@@ -110,7 +110,7 @@ class SpotOptimizerError(Exception):
         }
 
 
-class ValidationError(SpotOptimizerError):
+class ValidationError(SpotOptimizerBaseError):
     """Raised when input validation fails."""
 
     def __init__(
@@ -138,7 +138,7 @@ class ValidationError(SpotOptimizerError):
         super().__init__(message, error_code, **kwargs)
 
 
-class ConfigurationError(SpotOptimizerError):
+class ConfigurationError(SpotOptimizerBaseError):
     """Raised when configuration is invalid or missing."""
 
     def __init__(
@@ -162,7 +162,7 @@ class ConfigurationError(SpotOptimizerError):
         super().__init__(message, error_code, **kwargs)
 
 
-class StorageError(SpotOptimizerError):
+class StorageError(SpotOptimizerBaseError):
     """Raised when database/storage operations fail."""
 
     def __init__(
@@ -190,7 +190,7 @@ class StorageError(SpotOptimizerError):
         super().__init__(message, error_code, **kwargs)
 
 
-class OptimizationError(SpotOptimizerError):
+class OptimizationError(SpotOptimizerBaseError):
     """Raised when optimization process fails."""
 
     def __init__(
@@ -214,7 +214,7 @@ class OptimizationError(SpotOptimizerError):
         super().__init__(message, error_code, **kwargs)
 
 
-class NetworkError(SpotOptimizerError):
+class NetworkError(SpotOptimizerBaseError):
     """Raised when network operations fail."""
 
     def __init__(
@@ -242,7 +242,7 @@ class NetworkError(SpotOptimizerError):
         super().__init__(message, error_code, **kwargs)
 
 
-class DataError(SpotOptimizerError):
+class DataError(SpotOptimizerBaseError):
     """Raised when data operations fail."""
 
     def __init__(

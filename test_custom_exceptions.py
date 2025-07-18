@@ -89,7 +89,7 @@ def test_exception_hierarchy():
     print("Testing exception hierarchy...")
 
     from spot_optimizer.exceptions import (
-        SpotOptimizerError,
+        SpotOptimizerBaseError,
         ValidationError,
         StorageError,
         NetworkError,
@@ -113,8 +113,8 @@ def test_exception_hierarchy():
         try:
             exc = exception_class(message, error_code=ErrorCode.UNKNOWN)
             assert isinstance(
-                exc, SpotOptimizerError
-            ), f"{exception_class.__name__} should inherit from SpotOptimizerError"
+                exc, SpotOptimizerBaseError
+            ), f"{exception_class.__name__} should inherit from SpotOptimizerBaseError"
             assert (
                 exc.error_code == ErrorCode.UNKNOWN
             ), f"{exception_class.__name__} should have error_code attribute"
@@ -122,7 +122,7 @@ def test_exception_hierarchy():
                 str(exc) == message
             ), f"{exception_class.__name__} should have correct message"
             print(
-                f"✅ PASSED: {exception_class.__name__} properly inherits from SpotOptimizerError"
+                f"✅ PASSED: {exception_class.__name__} properly inherits from SpotOptimizerBaseError"
             )
         except Exception as e:
             print(
