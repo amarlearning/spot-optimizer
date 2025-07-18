@@ -67,6 +67,8 @@ class SpotOptimizerBaseError(Exception):
     :param suggestions: Actionable suggestions for resolution
     :param cause: Original exception that caused this error
     """
+    
+    PREFIX = ""  # Default empty prefix, can be overridden by subclasses
 
     def __init__(
         self,
@@ -76,7 +78,13 @@ class SpotOptimizerBaseError(Exception):
         suggestions: Optional[Union[str, list]] = None,
         cause: Optional[Exception] = None,
     ):
-        super().__init__(message)
+        # Apply prefix if it exists and message doesn't already contain it
+        if self.PREFIX and not message.startswith(self.PREFIX):
+            prefixed_message = f"{self.PREFIX} {message}"
+        else:
+            prefixed_message = message
+            
+        super().__init__(prefixed_message)
         self.error_code = error_code
         self.context = context or {}
         self.suggestions = suggestions
@@ -86,7 +94,7 @@ class SpotOptimizerBaseError(Exception):
         if cause:
             self.__cause__ = cause
 
-        logger.error("%s: %s", self.__class__.__name__, message, exc_info=True)
+        logger.error("%s: %s", self.__class__.__name__, prefixed_message, exc_info=True)
 
     def __str__(self) -> str:
         """Return formatted error message with context."""
@@ -112,6 +120,8 @@ class SpotOptimizerBaseError(Exception):
 
 class ValidationError(SpotOptimizerBaseError):
     """Raised when input validation fails."""
+    
+    PREFIX = "Invalid"
 
     def __init__(
         self,
@@ -140,6 +150,8 @@ class ValidationError(SpotOptimizerBaseError):
 
 class ConfigurationError(SpotOptimizerBaseError):
     """Raised when configuration is invalid or missing."""
+    
+    PREFIX = "Invalid"
 
     def __init__(
         self,
@@ -164,6 +176,8 @@ class ConfigurationError(SpotOptimizerBaseError):
 
 class StorageError(SpotOptimizerBaseError):
     """Raised when database/storage operations fail."""
+    
+    PREFIX = "Failed to"
 
     def __init__(
         self,
@@ -192,6 +206,8 @@ class StorageError(SpotOptimizerBaseError):
 
 class OptimizationError(SpotOptimizerBaseError):
     """Raised when optimization process fails."""
+    
+    PREFIX = ""  # Keep generic, varies by context
 
     def __init__(
         self,
@@ -216,6 +232,8 @@ class OptimizationError(SpotOptimizerBaseError):
 
 class NetworkError(SpotOptimizerBaseError):
     """Raised when network operations fail."""
+    
+    PREFIX = "Failed to"
 
     def __init__(
         self,
@@ -242,8 +260,65 @@ class NetworkError(SpotOptimizerBaseError):
         super().__init__(message, error_code, **kwargs)
 
 
+# Convenience functions for raising exceptions
+def raise_validation_error(
+    message: str,
+    error_code: ErrorCode = ErrorCode.INVALID_PARAMETERS,
+    **kwargs,
+) -> None:
+    """Convenience function to raise ValidationError."""
+    raise ValidationError(message, error_code, **kwargs)
+
+
+def raise_storage_error(
+    message: str,
+    error_code: ErrorCode = ErrorCode.DATABASE_CONNECTION_ERROR,
+    **kwargs,
+) -> None:
+    """Convenience function to raise StorageError."""
+    raise StorageError(message, error_code, **kwargs)
+
+
+def raise_network_error(
+    message: str,
+    error_code: ErrorCode = ErrorCode.NETWORK_REQUEST_ERROR,
+    **kwargs,
+) -> None:
+    """Convenience function to raise NetworkError."""
+    raise NetworkError(message, error_code, **kwargs)
+
+
+def raise_data_error(
+    message: str,
+    error_code: ErrorCode = ErrorCode.DATA_VALIDATION_ERROR,
+    **kwargs,
+) -> None:
+    """Convenience function to raise DataError."""
+    raise DataError(message, error_code, **kwargs)
+
+
+def raise_optimization_error(
+    message: str,
+    error_code: ErrorCode = ErrorCode.OPTIMIZATION_FAILED,
+    **kwargs,
+) -> None:
+    """Convenience function to raise OptimizationError."""
+    raise OptimizationError(message, error_code, **kwargs)
+
+
+def raise_configuration_error(
+    message: str,
+    error_code: ErrorCode = ErrorCode.CONFIGURATION_ERROR,
+    **kwargs,
+) -> None:
+    """Convenience function to raise ConfigurationError."""
+    raise ConfigurationError(message, error_code, **kwargs)
+
+
 class DataError(SpotOptimizerBaseError):
     """Raised when data operations fail."""
+    
+    PREFIX = "Failed to"
 
     def __init__(
         self,
