@@ -67,7 +67,7 @@ class SpotOptimizerBaseError(Exception):
     :param suggestions: Actionable suggestions for resolution
     :param cause: Original exception that caused this error
     """
-    
+
     PREFIX = ""  # Default empty prefix, can be overridden by subclasses
 
     def __init__(
@@ -83,7 +83,7 @@ class SpotOptimizerBaseError(Exception):
             prefixed_message = f"{self.PREFIX} {message}"
         else:
             prefixed_message = message
-            
+
         super().__init__(prefixed_message)
         self.error_code = error_code
         self.context = context or {}
@@ -120,7 +120,7 @@ class SpotOptimizerBaseError(Exception):
 
 class ValidationError(SpotOptimizerBaseError):
     """Raised when input validation fails."""
-    
+
     PREFIX = "Invalid"
 
     def __init__(
@@ -150,7 +150,7 @@ class ValidationError(SpotOptimizerBaseError):
 
 class ConfigurationError(SpotOptimizerBaseError):
     """Raised when configuration is invalid or missing."""
-    
+
     PREFIX = "Invalid"
 
     def __init__(
@@ -176,7 +176,7 @@ class ConfigurationError(SpotOptimizerBaseError):
 
 class StorageError(SpotOptimizerBaseError):
     """Raised when database/storage operations fail."""
-    
+
     PREFIX = "Failed to"
 
     def __init__(
@@ -206,7 +206,7 @@ class StorageError(SpotOptimizerBaseError):
 
 class OptimizationError(SpotOptimizerBaseError):
     """Raised when optimization process fails."""
-    
+
     PREFIX = ""  # Keep generic, varies by context
 
     def __init__(
@@ -232,7 +232,7 @@ class OptimizationError(SpotOptimizerBaseError):
 
 class NetworkError(SpotOptimizerBaseError):
     """Raised when network operations fail."""
-    
+
     PREFIX = "Failed to"
 
     def __init__(
@@ -317,7 +317,7 @@ def raise_configuration_error(
 
 class DataError(SpotOptimizerBaseError):
     """Raised when data operations fail."""
-    
+
     PREFIX = "Failed to"
 
     def __init__(
