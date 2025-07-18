@@ -1,5 +1,6 @@
 import pytest
 from spot_optimizer.storage_engine.duckdb_storage_engine import DuckDBStorage
+from spot_optimizer.exceptions import StorageError, ValidationError
 
 
 @pytest.fixture
@@ -112,14 +113,12 @@ def test_query_with_parameters(db, sample_data):
 def test_error_handling(db):
     """Test error handling in database operations."""
     # Test invalid query
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(StorageError, match="Database query failed"):
         db.query_data("SELECT * FROM nonexistent_table")
-    assert "Query failed" in str(exc_info.value)
 
     # Test storing invalid data
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(StorageError, match="Failed to store data"):
         db.store_data({"invalid": "data"})
-    assert "Failed to store data" in str(exc_info.value)
 
 
 def test_context_manager():
@@ -134,15 +133,15 @@ def test_no_connection_operations():
     """Test operations without an active connection."""
     db = DuckDBStorage(":memory:")  # Don't use context manager
 
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(StorageError) as exc_info:
         db.query_data("SELECT 1")
     assert "No database connection" in str(exc_info.value)
 
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(StorageError) as exc_info:
         db.store_data({})
     assert "No database connection" in str(exc_info.value)
 
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(StorageError) as exc_info:
         db.clear_data()
     assert "No database connection" in str(exc_info.value)
 
@@ -155,7 +154,7 @@ def test_table_name_validation():
     for table_name in db.VALID_TABLES:
         db._validate_table_name(table_name)  # Should not raise
 
-    # Invalid table names should raise ValueError
+    # Invalid table names should raise ValidationError
     invalid_tables = [
         "users; DROP TABLE instance_types; --",
         "' OR '1'='1",
@@ -168,10 +167,10 @@ def test_table_name_validation():
     ]
 
     for invalid_table in invalid_tables:
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValidationError) as exc_info:
             db._validate_table_name(invalid_table)
         assert "Invalid table name" in str(exc_info.value)
-        assert "Valid tables are" in str(exc_info.value)
+        assert "Use one of the valid tables" in str(exc_info.value)
 
 
 def test_clear_data_sql_injection_prevention(db, sample_data):

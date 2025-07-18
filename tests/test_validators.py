@@ -6,6 +6,7 @@ from spot_optimizer.validators import (
     validate_optimization_params,
 )
 from spot_optimizer.optimizer_mode import Mode
+from spot_optimizer.exceptions import ValidationError
 
 
 def test_validate_cores_valid():
@@ -25,7 +26,7 @@ def test_validate_cores_valid():
 )
 def test_validate_cores_invalid(cores, error_msg):
     """Test invalid core values."""
-    with pytest.raises(ValueError, match=error_msg):
+    with pytest.raises(ValidationError, match=error_msg):
         validate_cores(cores)
 
 
@@ -46,7 +47,7 @@ def test_validate_memory_valid():
 )
 def test_validate_memory_invalid(memory, error_msg):
     """Test invalid memory values."""
-    with pytest.raises(ValueError, match=error_msg):
+    with pytest.raises(ValidationError, match=error_msg):
         validate_memory(memory)
 
 
@@ -59,7 +60,7 @@ def test_validate_mode_valid():
 
 def test_validate_mode_invalid():
     """Test invalid optimization mode."""
-    with pytest.raises(ValueError, match="Invalid mode"):
+    with pytest.raises(ValidationError, match="Invalid mode"):
         validate_mode("invalid_mode")
 
 
@@ -80,5 +81,5 @@ def test_validate_optimization_params_valid():
 )
 def test_validate_optimization_params_invalid(cores, memory, mode, expected_error):
     """Test invalid parameter combinations."""
-    with pytest.raises(ValueError, match=expected_error):
+    with pytest.raises(ValidationError, match=expected_error):
         validate_optimization_params(cores, memory, mode)

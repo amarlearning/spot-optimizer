@@ -9,6 +9,11 @@ from spot_optimizer.storage_engine.duckdb_storage_engine import DuckDBStorage
 from spot_optimizer.spot_advisor_engine import ensure_fresh_data
 from spot_optimizer.validators import validate_optimization_params
 from spot_optimizer.logging_config import get_logger
+from spot_optimizer.exceptions import (
+    OptimizationError,
+    ErrorCode,
+    raise_optimization_error,
+)
 
 
 logger = get_logger(__name__)
@@ -189,25 +194,30 @@ class SpotOptimizer:
             result = self.db.query_data(query, params)
 
             if len(result) == 0:
-                params = []
-                params.append(f"cpu = {cores}")
-                params.append(f"memory = {memory}")
-                params.append(f"region = {region}")
-                params.append(f"mode = {mode}")
+                params = {
+                    "cores": cores,
+                    "memory": memory,
+                    "region": region,
+                    "mode": mode,
+                }
 
                 if instance_family:
-                    params.append(f"instance_family = {instance_family}")
+                    params["instance_family"] = instance_family
                 if emr_version:
-                    params.append(f"emr_version = {emr_version}")
+                    params["emr_version"] = emr_version
                 if ssd_only:
-                    params.append("ssd_only = True")
+                    params["ssd_only"] = ssd_only
                 if not arm_instances:
-                    params.append("arm_instances = False")
+                    params["arm_instances"] = arm_instances
+
+                param_strs = []
+                for key, value in params.items():
+                    param_strs.append(f"{key} = {value}")
 
                 error_msg = "No suitable instances found matching for " + " and ".join(
-                    params
+                    param_strs
                 )
-                raise ValueError(error_msg)
+                raise_optimization_error(error_msg, params)
 
             best_match = result.iloc[0]
 
@@ -225,6 +235,25 @@ class SpotOptimizer:
                 },
             }
 
+        except OptimizationError:
+            # Re-raise optimization errors as-is
+            raise
         except Exception as e:
             logger.error(f"Error optimizing instances: {e}")
-            raise
+            # Wrap unexpected errors in OptimizationError
+            raise OptimizationError(
+                "Unexpected error during optimization",
+                error_code=ErrorCode.OPTIMIZATION_FAILED,
+                optimization_params={
+                    "cores": cores,
+                    "memory": memory,
+                    "region": region,
+                    "mode": mode,
+                },
+                suggestions=[
+                    "Check if the database is accessible",
+                    "Verify spot advisor data is available",
+                    "Try with different parameters",
+                ],
+                cause=e,
+            )

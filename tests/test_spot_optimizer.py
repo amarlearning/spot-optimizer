@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 import pandas as pd
 from spot_optimizer.spot_optimizer import SpotOptimizer
 from spot_optimizer.optimizer_mode import Mode
+from spot_optimizer.exceptions import OptimizationError, ValidationError
 
 
 @pytest.fixture
@@ -88,7 +89,8 @@ def sample_query_result():
     )
 
 
-def test_optimize_success(optimizer, mock_db, sample_query_result):
+@patch("spot_optimizer.spot_advisor_engine.should_refresh_data", return_value=False)
+def test_optimize_success(mock_should_refresh, optimizer, mock_db, sample_query_result):
     """Test successful optimization with valid parameters."""
     mock_db.query_data.return_value = sample_query_result
 
@@ -105,18 +107,22 @@ def test_optimize_success(optimizer, mock_db, sample_query_result):
     }
 
 
-def test_optimize_no_results(optimizer, mock_db):
+@patch("spot_optimizer.spot_advisor_engine.should_refresh_data", return_value=False)
+def test_optimize_no_results(mock_should_refresh, optimizer, mock_db):
     """Test optimization when no suitable instances are found."""
     mock_db.query_data.return_value = pd.DataFrame()
 
     with pytest.raises(
-        ValueError,
-        match="No suitable instances found matching for cpu = 8 and memory = 32 and region = us-west-2 and mode = balanced",
+        OptimizationError,
+        match="No suitable instances found",
     ):
         optimizer.optimize(cores=8, memory=32)
 
 
-def test_optimize_with_instance_family(optimizer, mock_db, sample_query_result):
+@patch("spot_optimizer.spot_advisor_engine.should_refresh_data", return_value=False)
+def test_optimize_with_instance_family(
+    mock_should_refresh, optimizer, mock_db, sample_query_result
+):
     """Test optimization with instance family filter."""
     mock_db.query_data.return_value = sample_query_result
 
@@ -129,7 +135,10 @@ def test_optimize_with_instance_family(optimizer, mock_db, sample_query_result):
     assert "instance_family IN" in query_call
 
 
-def test_optimize_with_ssd_only(optimizer, mock_db, sample_query_result):
+@patch("spot_optimizer.spot_advisor_engine.should_refresh_data", return_value=False)
+def test_optimize_with_ssd_only(
+    mock_should_refresh, optimizer, mock_db, sample_query_result
+):
     """Test optimization with SSD-only filter."""
     mock_db.query_data.return_value = sample_query_result
 
@@ -140,7 +149,10 @@ def test_optimize_with_ssd_only(optimizer, mock_db, sample_query_result):
     assert "storage_type = 'ssd'" in query_call
 
 
-def test_optimize_with_arm_instances(optimizer, mock_db, sample_query_result):
+@patch("spot_optimizer.spot_advisor_engine.should_refresh_data", return_value=False)
+def test_optimize_with_arm_instances(
+    mock_should_refresh, optimizer, mock_db, sample_query_result
+):
     """Test optimization with ARM instances disabled."""
     mock_db.query_data.return_value = sample_query_result
 
@@ -154,7 +166,10 @@ def test_optimize_with_arm_instances(optimizer, mock_db, sample_query_result):
 @pytest.mark.parametrize(
     "mode", [Mode.LATENCY.value, Mode.BALANCED.value, Mode.FAULT_TOLERANCE.value]
 )
-def test_optimize_different_modes(optimizer, mock_db, sample_query_result, mode):
+@patch("spot_optimizer.spot_advisor_engine.should_refresh_data", return_value=False)
+def test_optimize_different_modes(
+    mock_should_refresh, optimizer, mock_db, sample_query_result, mode
+):
     """Test optimization with different modes."""
     mock_db.query_data.return_value = sample_query_result
 
@@ -167,16 +182,16 @@ def test_optimize_database_error(optimizer, mock_db):
     """Test handling of database errors."""
     mock_db.query_data.side_effect = Exception("Database error")
 
-    with pytest.raises(Exception, match="Database error"):
+    with pytest.raises(OptimizationError, match="Unexpected error during optimization"):
         optimizer.optimize(cores=8, memory=32)
 
 
 def test_optimize_invalid_parameters(optimizer):
     """Test optimization with invalid parameters."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         optimizer.optimize(cores=-1, memory=32)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         optimizer.optimize(cores=8, memory=-1)
 
 

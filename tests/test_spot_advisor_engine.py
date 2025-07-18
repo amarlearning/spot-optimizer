@@ -10,6 +10,7 @@ from spot_optimizer.spot_advisor_engine import (
     ensure_fresh_data,
     CACHE_EXPIRY_SECONDS,
 )
+from spot_optimizer.exceptions import StorageError, NetworkError
 
 
 @pytest.fixture
@@ -60,7 +61,7 @@ def test_should_refresh_data_fresh(mock_db):
 
 def test_should_refresh_data_db_error(mock_db):
     """Test should_refresh_data handles database errors."""
-    mock_db.query_data.side_effect = Exception("Database error")
+    mock_db.query_data.side_effect = StorageError("Database error")
 
     assert should_refresh_data(mock_db) is True
 
@@ -78,9 +79,9 @@ def test_refresh_spot_data(mock_advisor, mock_db, sample_spot_data):
 
 def test_refresh_spot_data_error(mock_advisor, mock_db):
     """Test refresh_spot_data error handling."""
-    mock_advisor.fetch_data.side_effect = Exception("Fetch error")
+    mock_advisor.fetch_data.side_effect = NetworkError("Fetch error")
 
-    with pytest.raises(Exception, match="Fetch error"):
+    with pytest.raises(NetworkError, match="Fetch error"):
         refresh_spot_data(mock_advisor, mock_db)
 
 
@@ -110,19 +111,10 @@ def test_ensure_fresh_data_when_not_needed(mock_advisor, mock_db):
 
 def test_ensure_fresh_data_error_handling(mock_advisor, mock_db):
     """Test ensure_fresh_data error handling."""
-    mock_db.query_data.side_effect = Exception("Database error")
-    mock_advisor.fetch_data.side_effect = Exception("Fetch error")
-
-    with pytest.raises(Exception, match="Fetch error"):
-        ensure_fresh_data(mock_advisor, mock_db)
-
-
-def test_ensure_fresh_data_error_handling(mock_advisor, mock_db):
-    """Test ensure_fresh_data error handling."""
-    mock_db.query_data.side_effect = Exception("Database error")
-    mock_advisor.fetch_data.side_effect = Exception("Fetch error")
+    mock_db.query_data.side_effect = StorageError("Database error")
+    mock_advisor.fetch_data.side_effect = NetworkError("Fetch error")
 
     # DB error is treated as cache miss, so it will try to fetch,
     # which will then fail with Fetch error
-    with pytest.raises(Exception, match="Fetch error"):
+    with pytest.raises(NetworkError, match="Fetch error"):
         ensure_fresh_data(mock_advisor, mock_db)

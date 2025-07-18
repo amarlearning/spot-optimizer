@@ -1,7 +1,17 @@
 import json
 import argparse
+import sys
 
 from spot_optimizer import optimize
+from spot_optimizer.exceptions import (
+    SpotOptimizerError,
+    ValidationError,
+    StorageError,
+    NetworkError,
+    DataError,
+    OptimizationError,
+    ConfigurationError,
+)
 
 
 def validate_positive_int(value: str, param_name: str) -> int:
@@ -94,20 +104,77 @@ def parse_args(args=None):
 
 def main():
     """Main entry point for the CLI."""
-    args = parse_args()
+    try:
+        args = parse_args()
 
-    result = optimize(
-        cores=args.cores,
-        memory=args.memory,
-        region=args.region,
-        ssd_only=args.ssd_only,
-        arm_instances=args.arm_instances,
-        instance_family=args.instance_family,
-        emr_version=args.emr_version,
-        mode=args.mode,
-    )
+        result = optimize(
+            cores=args.cores,
+            memory=args.memory,
+            region=args.region,
+            ssd_only=args.ssd_only,
+            arm_instances=args.arm_instances,
+            instance_family=args.instance_family,
+            emr_version=args.emr_version,
+            mode=args.mode,
+        )
 
-    print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2))
+    except ValidationError as e:
+        print(f"Validation Error: {e}", file=sys.stderr)
+        if e.suggestions:
+            print("Suggestions:", file=sys.stderr)
+            for suggestion in e.suggestions:
+                print(f"  - {suggestion}", file=sys.stderr)
+        sys.exit(1)
+    except StorageError as e:
+        print(f"Storage Error: {e}", file=sys.stderr)
+        if e.suggestions:
+            print("Suggestions:", file=sys.stderr)
+            for suggestion in e.suggestions:
+                print(f"  - {suggestion}", file=sys.stderr)
+        sys.exit(2)
+    except NetworkError as e:
+        print(f"Network Error: {e}", file=sys.stderr)
+        if e.suggestions:
+            print("Suggestions:", file=sys.stderr)
+            for suggestion in e.suggestions:
+                print(f"  - {suggestion}", file=sys.stderr)
+        sys.exit(3)
+    except DataError as e:
+        print(f"Data Error: {e}", file=sys.stderr)
+        if e.suggestions:
+            print("Suggestions:", file=sys.stderr)
+            for suggestion in e.suggestions:
+                print(f"  - {suggestion}", file=sys.stderr)
+        sys.exit(4)
+    except OptimizationError as e:
+        print(f"Optimization Error: {e}", file=sys.stderr)
+        if e.suggestions:
+            print("Suggestions:", file=sys.stderr)
+            for suggestion in e.suggestions:
+                print(f"  - {suggestion}", file=sys.stderr)
+        sys.exit(5)
+    except ConfigurationError as e:
+        print(f"Configuration Error: {e}", file=sys.stderr)
+        if e.suggestions:
+            print("Suggestions:", file=sys.stderr)
+            for suggestion in e.suggestions:
+                print(f"  - {suggestion}", file=sys.stderr)
+        sys.exit(6)
+    except SpotOptimizerError as e:
+        print(f"Spot Optimizer Error: {e}", file=sys.stderr)
+        if e.suggestions:
+            print("Suggestions:", file=sys.stderr)
+            for suggestion in e.suggestions:
+                print(f"  - {suggestion}", file=sys.stderr)
+        sys.exit(7)
+    except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        print(
+            "This is likely a bug. Please report it with the full error details.",
+            file=sys.stderr,
+        )
+        sys.exit(8)
 
 
 if __name__ == "__main__":

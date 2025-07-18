@@ -3,6 +3,7 @@ import requests
 from unittest.mock import patch, Mock
 
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
+from spot_optimizer.exceptions import ValidationError, NetworkError, DataError
 
 
 @pytest.fixture
@@ -36,7 +37,7 @@ def test_init_with_valid_url():
 )
 def test_init_with_invalid_url(invalid_url):
     """Test initialization with invalid URLs."""
-    with pytest.raises(ValueError, match="Invalid URL"):
+    with pytest.raises(ValidationError, match="Invalid URL"):
         AwsSpotAdvisorData(url=invalid_url)
 
 
@@ -84,7 +85,7 @@ def test_fetch_data_all_retries_fail(mock_get):
 
     advisor = AwsSpotAdvisorData(max_retries=2)
 
-    with pytest.raises(requests.RequestException) as exc_info:
+    with pytest.raises(NetworkError) as exc_info:
         advisor.fetch_data()
 
     assert "Failed to fetch data after 2 attempts" in str(exc_info.value)
@@ -97,11 +98,13 @@ def test_fetch_data_invalid_json(mock_get):
     mock_response = Mock()
     mock_response.raise_for_status.return_value = None
     mock_response.json.side_effect = ValueError("Invalid JSON")
+    mock_response.headers = {}
+    mock_response.text = "invalid json"
     mock_get.return_value = mock_response
 
     advisor = AwsSpotAdvisorData()
 
-    with pytest.raises(requests.RequestException):
+    with pytest.raises(DataError):
         advisor.fetch_data()
 
 
@@ -112,7 +115,7 @@ def test_fetch_data_timeout(mock_get):
 
     advisor = AwsSpotAdvisorData(request_timeout=1)
 
-    with pytest.raises(requests.RequestException) as exc_info:
+    with pytest.raises(NetworkError) as exc_info:
         advisor.fetch_data()
 
     assert mock_get.call_count == advisor.max_retries
@@ -128,7 +131,7 @@ def test_exponential_backoff(mock_get, mock_sleep):
 
     advisor = AwsSpotAdvisorData(max_retries=3)
 
-    with pytest.raises(requests.RequestException):
+    with pytest.raises(NetworkError):
         advisor.fetch_data()
 
     # Should have tried to sleep twice (not on last attempt)

@@ -8,6 +8,13 @@ import duckdb
 import pandas as pd
 
 from spot_optimizer.storage_engine.storage_engine import StorageEngine
+from spot_optimizer.exceptions import (
+    ValidationError,
+    StorageError,
+    ErrorCode,
+    raise_validation_error,
+    raise_storage_error,
+)
 
 
 class DuckDBStorage(StorageEngine):
@@ -42,11 +49,20 @@ class DuckDBStorage(StorageEngine):
         Validate that the table name is in the whitelist to prevent SQL injection.
 
         :param table_name: The table name to validate
-        :raises ValueError: If the table name is not in the whitelist
+        :raises ValidationError: If the table name is not in the whitelist
         """
         if table_name not in self.VALID_TABLES:
-            raise ValueError(
-                f"Invalid table name: {table_name}. Valid tables are: {', '.join(sorted(self.VALID_TABLES))}"
+            raise_validation_error(
+                message=f"Invalid table name: {table_name}",
+                error_code=ErrorCode.INVALID_TABLE_NAME,
+                validation_context={
+                    "invalid_table": table_name,
+                    "valid_tables": list(sorted(self.VALID_TABLES)),
+                },
+                suggestions=[
+                    f"Use one of the valid tables: {', '.join(sorted(self.VALID_TABLES))}",
+                    "Verify the table name is correctly spelled",
+                ],
             )
 
     def connect(self) -> None:
@@ -63,7 +79,15 @@ class DuckDBStorage(StorageEngine):
     def _create_tables(self) -> None:
         """Create necessary tables if they don't exist."""
         if not self.conn:
-            raise RuntimeError("No database connection")
+            raise StorageError(
+                "No database connection available",
+                error_code=ErrorCode.DATABASE_CONNECTION_ERROR,
+                operation="create_tables",
+                suggestions=[
+                    "Call connect() before creating tables",
+                    "Check if database path is accessible",
+                ],
+            )
 
         tables = {
             "cache_timestamp": "CREATE TABLE IF NOT EXISTS cache_timestamp (timestamp TIMESTAMP)",
@@ -103,16 +127,29 @@ class DuckDBStorage(StorageEngine):
             try:
                 self.conn.execute(create_sql)
             except Exception as e:
-                raise RuntimeError(f"Failed to create table {table_name}: {str(e)}")
+                raise_storage_error(
+                    message=f"Failed to create table '{table_name}'",
+                    error_code=ErrorCode.TABLE_CREATION_ERROR,
+                    storage_context={"table_name": table_name},
+                    cause=e,
+                )
 
     def store_data(self, data: Dict[str, Any]) -> None:
         """
         Store data in DuckDB.
         :param data: Dictionary containing data to be stored.
-        :raises RuntimeError: If no database connection exists.
+        :raises StorageError: If no database connection exists or storage fails.
         """
         if not self.conn:
-            raise RuntimeError("No database connection")
+            raise StorageError(
+                "No database connection available",
+                error_code=ErrorCode.DATABASE_CONNECTION_ERROR,
+                operation="store",
+                suggestions=[
+                    "Call connect() before storing data",
+                    "Check if database path is accessible",
+                ],
+            )
 
         try:
             # Store timestamp
@@ -186,7 +223,11 @@ class DuckDBStorage(StorageEngine):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to store data: {str(e)}")
+            raise_storage_error(
+                message="Failed to store data in database",
+                error_code=ErrorCode.DATABASE_STORE_ERROR,
+                cause=e,
+            )
 
     def query_data(
         self, query: str, params: Optional[List[Any]] = None
@@ -196,26 +237,47 @@ class DuckDBStorage(StorageEngine):
         :param query: SQL query string.
         :param params: Optional query parameters.
         :return: Query result as pandas DataFrame.
-        :raises RuntimeError: If no database connection exists.
+        :raises StorageError: If no database connection exists or query fails.
         """
         if not self.conn:
-            raise RuntimeError("No database connection")
+            raise StorageError(
+                "No database connection available",
+                error_code=ErrorCode.DATABASE_CONNECTION_ERROR,
+                operation="query",
+                suggestions=[
+                    "Call connect() before querying data",
+                    "Check if database path is accessible",
+                ],
+            )
 
         try:
             if params:
                 return self.conn.execute(query, params).fetchdf()
             return self.conn.execute(query).fetchdf()
         except Exception as e:
-            raise RuntimeError(f"Query failed: {str(e)}")
+            raise_storage_error(
+                message=f"Database query failed: {query}",
+                error_code=ErrorCode.DATABASE_QUERY_ERROR,
+                storage_context={"query": query, "params": params},
+                cause=e,
+            )
 
     def clear_data(self) -> None:
         """
         Clear all data from DuckDB tables.
-        :raises RuntimeError: If no database connection exists.
-        :raises ValueError: If any table name is invalid.
+        :raises StorageError: If no database connection exists or clearing fails.
+        :raises ValidationError: If any table name is invalid.
         """
         if not self.conn:
-            raise RuntimeError("No database connection")
+            raise StorageError(
+                "No database connection available",
+                error_code=ErrorCode.DATABASE_CONNECTION_ERROR,
+                operation="clear",
+                suggestions=[
+                    "Call connect() before clearing data",
+                    "Check if database path is accessible",
+                ],
+            )
 
         # Use the whitelist directly to ensure all table names are safe
         tables = list(self.VALID_TABLES)
@@ -226,8 +288,13 @@ class DuckDBStorage(StorageEngine):
                 self._validate_table_name(table)
                 # Since table name is validated against whitelist, it's safe to use in SQL
                 self.conn.execute(f"DELETE FROM {table}")
-            except ValueError as e:
-                # Re-raise validation errors
-                raise e
+            except ValidationError:
+                # Re-raise validation errors as-is
+                raise
             except Exception as e:
-                raise RuntimeError(f"Failed to clear table {table}: {str(e)}")
+                raise_storage_error(
+                    message=f"Failed to clear table '{table}'",
+                    error_code=ErrorCode.DATABASE_CLEAR_ERROR,
+                    storage_context={"table_name": table},
+                    cause=e,
+                )
