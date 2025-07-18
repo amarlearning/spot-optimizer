@@ -6,6 +6,9 @@ context information, and actionable suggestions for error handling.
 
 from typing import Any, Dict, Optional, Union
 from enum import Enum
+from spot_optimizer.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class ErrorCode(Enum):
@@ -306,13 +309,15 @@ def raise_validation_error(
         suggestions: List of suggested solutions
         cause: Original exception that caused this error
     """
-    raise ValidationError(
+    error = ValidationError(
         message=message,
         error_code=error_code,
         context=validation_context,
         suggestions=suggestions,
         cause=cause,
     )
+    logger.error("Validation error raised: %s", str(error))
+    raise error
 
 
 def raise_storage_error(
@@ -331,13 +336,15 @@ def raise_storage_error(
         suggestions: List of suggested solutions
         cause: Original exception that caused this error
     """
-    raise StorageError(
+    error = StorageError(
         message=message,
         error_code=error_code,
         context=storage_context,
         suggestions=suggestions,
         cause=cause,
     )
+    logger.error("Storage error raised: %s", str(error))
+    raise error
 
 
 def raise_optimization_error(
@@ -366,13 +373,15 @@ def raise_optimization_error(
             "Try a different region or instance family",
         ]
 
-    raise OptimizationError(
+    error = OptimizationError(
         message=f"Optimization failed: {reason}",
         error_code=error_code,
         optimization_params=params,
         suggestions=suggestions,
         cause=cause,
     )
+    logger.error("Optimization error raised: %s", str(error))
+    raise error
 
 
 def raise_network_error(
@@ -391,13 +400,15 @@ def raise_network_error(
         suggestions: List of suggested solutions
         cause: Original exception that caused this error
     """
-    raise NetworkError(
+    error = NetworkError(
         message=message,
         error_code=error_code,
         context=network_context,
         suggestions=suggestions,
         cause=cause,
     )
+    logger.error("Network error raised: %s", str(error))
+    raise error
 
 
 def raise_data_error(
@@ -416,13 +427,15 @@ def raise_data_error(
         suggestions: List of suggested solutions
         cause: Original exception that caused this error
     """
-    raise DataError(
+    error = DataError(
         message=message,
         error_code=error_code,
         context=data_context,
         suggestions=suggestions,
         cause=cause,
     )
+    logger.error("Data error raised: %s", str(error))
+    raise error
 
 
 def raise_configuration_error(
@@ -441,10 +454,12 @@ def raise_configuration_error(
         suggestions: List of suggested solutions
         cause: Original exception that caused this error
     """
-    raise ConfigurationError(
+    error = ConfigurationError(
         message=message,
         error_code=error_code,
         context=config_context,
         suggestions=suggestions,
         cause=cause,
     )
+    logger.error("Configuration error raised: %s", str(error))
+    raise error
