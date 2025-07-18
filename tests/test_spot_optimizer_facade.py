@@ -6,12 +6,14 @@ from spot_optimizer.spot_optimizer import SpotOptimizerFacade
 from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.exceptions import OptimizationError, ValidationError
 
+
 @pytest.fixture
 def mock_data_dir(tmp_path):
     """Create a temporary directory for test data."""
     with patch("spot_optimizer.spot_optimizer.user_data_dir") as mock_dir:
         mock_dir.return_value = str(tmp_path)
         yield tmp_path
+
 
 @pytest.fixture
 def mock_db():
@@ -20,9 +22,11 @@ def mock_db():
     db.disconnect = Mock()
     return db
 
+
 @pytest.fixture
 def mock_advisor():
     return Mock()
+
 
 @pytest.fixture
 def mock_engine():
@@ -30,16 +34,20 @@ def mock_engine():
     engine.ensure_fresh_data = Mock()
     return engine
 
+
 @pytest.fixture
 def mock_core():
     core = Mock()
     core.optimize = Mock()
     return core
 
+
 @pytest.fixture
 def facade(mock_db, mock_advisor, mock_engine, mock_core):
     """Fixture for SpotOptimizerFacade with mocked dependencies."""
-    with patch("spot_optimizer.spot_optimizer.SpotOptimizerFacade.create_default") as mock_create_default:
+    with patch(
+        "spot_optimizer.spot_optimizer.SpotOptimizerFacade.create_default"
+    ) as mock_create_default:
         facade_instance = SpotOptimizerFacade(
             spot_advisor=mock_advisor,
             db=mock_db,
@@ -65,7 +73,9 @@ def test_singleton_pattern():
     SpotOptimizerFacade.reset_instance()
 
 
-def test_initialization_with_dependencies(facade, mock_advisor, mock_db, mock_engine, mock_core):
+def test_initialization_with_dependencies(
+    facade, mock_advisor, mock_db, mock_engine, mock_core
+):
     """Test facade initialization with injected dependencies."""
     assert facade.spot_advisor is mock_advisor
     assert facade.db is mock_db

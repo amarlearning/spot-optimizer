@@ -42,9 +42,7 @@ class SpotAdvisorEngine:
                 return True
 
             last_update: datetime = result.iloc[0]["timestamp"]
-            time_since_update: float = (
-                datetime.now() - last_update
-            ).total_seconds()
+            time_since_update: float = (datetime.now() - last_update).total_seconds()
 
             logger.info(f"Time since last update: {time_since_update} seconds")
             return time_since_update > CACHE_EXPIRY_SECONDS

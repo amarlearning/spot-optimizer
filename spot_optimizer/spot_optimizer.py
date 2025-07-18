@@ -1,8 +1,7 @@
 import os
 import threading
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional
 from appdirs import user_data_dir
-import pandas as pd
 
 from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
