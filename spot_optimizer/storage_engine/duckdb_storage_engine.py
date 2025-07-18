@@ -2,7 +2,7 @@ import os
 import json
 from pathlib import Path
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import duckdb
 import pandas as pd
@@ -21,7 +21,7 @@ class DuckDBStorage(StorageEngine):
     """DuckDB implementation of the storage engine."""
 
     # Whitelist of valid table names to prevent SQL injection
-    VALID_TABLES = {
+    VALID_TABLES: Set[str] = {
         "cache_timestamp",
         "global_rate",
         "instance_types",
@@ -29,20 +29,20 @@ class DuckDBStorage(StorageEngine):
         "spot_advisor",
     }
 
-    def __init__(self, db_path: str = ":memory:"):
+    def __init__(self, db_path: str = ":memory:") -> None:
         """
         Initialize DuckDB storage.
         :param db_path: Path to the DuckDB database file (default: in-memory).
         """
-        self.db_path = db_path
+        self.db_path: str = db_path
         self.conn: Optional[duckdb.DuckDBPyConnection] = None
 
-        metadata_path = os.path.join(
+        metadata_path: str = os.path.join(
             Path(__file__).parent.parent, "resources", "instance_metadata.json"
         )
 
         with open(metadata_path) as f:
-            self.instance_metadata = json.load(f)
+            self.instance_metadata: Dict[str, Any] = json.load(f)
 
     def _validate_table_name(self, table_name: str) -> None:
         """
@@ -89,7 +89,7 @@ class DuckDBStorage(StorageEngine):
                 ],
             )
 
-        tables = {
+        tables: Dict[str, str] = {
             "cache_timestamp": "CREATE TABLE IF NOT EXISTS cache_timestamp (timestamp TIMESTAMP)",
             "global_rate": "CREATE TABLE IF NOT EXISTS global_rate (global_rate VARCHAR)",
             "instance_types": """
@@ -164,10 +164,12 @@ class DuckDBStorage(StorageEngine):
             )
 
             # Store instance data with metadata
-            instance_data = []
+            instance_data: List[
+                Tuple[str, str, int, float, str, str, bool, Optional[str]]
+            ] = []
             for key, value in data["instance_types"].items():
                 # Get storage and arch from metadata, fallback to defaults if not found
-                metadata = self.instance_metadata.get(key, {})
+                metadata: Dict[str, Any] = self.instance_metadata.get(key, {})
                 instance_data.append(
                     (
                         key,
@@ -193,7 +195,7 @@ class DuckDBStorage(StorageEngine):
             )
 
             # Store ranges data
-            ranges_data = [
+            ranges_data: List[Tuple[int, str, int, int]] = [
                 (item["index"], item["label"], item["dots"], item["max"])
                 for item in data["ranges"]
             ]
@@ -203,7 +205,7 @@ class DuckDBStorage(StorageEngine):
             )
 
             # Fix: Store spot advisor data with correct structure
-            spot_advisor_data = []
+            spot_advisor_data: List[Tuple[str, str, str, int, int]] = []
             for region, os_data in data["spot_advisor"].items():
                 for os_name, instance_data in os_data.items():
                     for instance_type, scores in instance_data.items():
@@ -280,7 +282,7 @@ class DuckDBStorage(StorageEngine):
             )
 
         # Use the whitelist directly to ensure all table names are safe
-        tables = list(self.VALID_TABLES)
+        tables: List[str] = list(self.VALID_TABLES)
 
         for table in tables:
             try:

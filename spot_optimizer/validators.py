@@ -1,3 +1,4 @@
+from typing import List
 from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.exceptions import ErrorCode, raise_validation_error
 
@@ -37,7 +38,7 @@ def validate_mode(mode: str) -> None:
     try:
         Mode(mode)
     except ValueError as e:
-        valid_modes = [m.value for m in Mode]
+        valid_modes: List[str] = [m.value for m in Mode]
         raise_validation_error(
             f"Invalid mode. Must be one of: {', '.join(valid_modes)}",
             error_code=ErrorCode.VALIDATION_INVALID_VALUE,

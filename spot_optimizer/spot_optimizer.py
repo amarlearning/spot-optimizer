@@ -1,7 +1,8 @@
 import os
 import threading
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any, Union
 from appdirs import user_data_dir
+import pandas as pd
 
 from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
@@ -42,25 +43,30 @@ class SpotOptimizer:
 
         return os.path.join(data_dir, "spot_advisor_data.db")
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the optimizer with its dependencies."""
-        self.db_path = self.get_default_db_path()
+        self.db_path: str = self.get_default_db_path()
         logger.debug(f"Using database path: {self.db_path}")
 
-        self.spot_advisor = AwsSpotAdvisorData()
-        self.db = DuckDBStorage(db_path=self.db_path)
+        self.spot_advisor: AwsSpotAdvisorData = AwsSpotAdvisorData()
+        self.db: DuckDBStorage = DuckDBStorage(db_path=self.db_path)
         self.db.connect()
-        self._initialized = True
+        self._initialized: bool = True
 
-    def __enter__(self):
+    def __enter__(self) -> "SpotOptimizer":
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[object],
+    ) -> None:
         """Context manager exit with proper cleanup."""
         self.cleanup()
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Cleanup database connection and resources."""
         if hasattr(self, "db") and self.db is not None:
             try:
@@ -68,7 +74,7 @@ class SpotOptimizer:
             except Exception as e:
                 logger.warning(f"Error during database cleanup: {e}")
             finally:
-                self.db = None
+                self.db = None  # type: ignore
 
     @classmethod
     def get_instance(cls) -> "SpotOptimizer":
@@ -87,7 +93,7 @@ class SpotOptimizer:
         return cls._instance
 
     @classmethod
-    def reset_instance(cls):
+    def reset_instance(cls) -> None:
         """
         Reset the singleton instance for testing purposes.
         This method should only be used in tests.
@@ -118,7 +124,7 @@ class SpotOptimizer:
             ensure_fresh_data(self.spot_advisor, self.db)
 
             # Get instance count range based on mode
-            mode_ranges = Mode.calculate_ranges(cores, memory)
+            mode_ranges: Dict[str, Any] = Mode.calculate_ranges(cores, memory)
 
             min_instances, max_instances = mode_ranges[mode]
 
@@ -162,11 +168,13 @@ class SpotOptimizer:
             """
 
             # Add filters based on requirements
-            storage_filter = "AND i.storage_type = 'ssd'" if ssd_only else ""
-            arch_filter = "AND i.architecture != 'arm64'" if not arm_instances else ""
-            family_filter = ""
+            storage_filter: str = "AND i.storage_type = 'ssd'" if ssd_only else ""
+            arch_filter: str = (
+                "AND i.architecture != 'arm64'" if not arm_instances else ""
+            )
+            family_filter: str = ""
 
-            params = [
+            params: List[Union[str, int, float]] = [
                 cores,
                 memory,
                 region,  # Basic params
@@ -181,7 +189,7 @@ class SpotOptimizer:
             ]
 
             if instance_family:
-                placeholders = ",".join(["?" for _ in instance_family])
+                placeholders: str = ",".join(["?" for _ in instance_family])
                 family_filter = f"AND i.instance_family IN ({placeholders})"
                 params.extend(instance_family)
 
@@ -191,10 +199,10 @@ class SpotOptimizer:
                 family_filter=family_filter,
             )
 
-            result = self.db.query_data(query, params)
+            result: pd.DataFrame = self.db.query_data(query, params)
 
             if len(result) == 0:
-                params = {
+                error_params: Dict[str, Any] = {
                     "cores": cores,
                     "memory": memory,
                     "region": region,
@@ -202,24 +210,25 @@ class SpotOptimizer:
                 }
 
                 if instance_family:
-                    params["instance_family"] = instance_family
+                    error_params["instance_family"] = instance_family
                 if emr_version:
-                    params["emr_version"] = emr_version
+                    error_params["emr_version"] = emr_version
                 if ssd_only:
-                    params["ssd_only"] = ssd_only
+                    error_params["ssd_only"] = ssd_only
                 if not arm_instances:
-                    params["arm_instances"] = arm_instances
+                    error_params["arm_instances"] = arm_instances
 
-                param_strs = []
-                for key, value in params.items():
+                param_strs: List[str] = []
+                for key, value in error_params.items():
                     param_strs.append(f"{key} = {value}")
 
-                error_msg = "No suitable instances found matching for " + " and ".join(
-                    param_strs
+                error_msg: str = (
+                    "No suitable instances found matching for "
+                    + " and ".join(param_strs)
                 )
-                raise_optimization_error(error_msg, params)
+                raise_optimization_error(error_msg, error_params)
 
-            best_match = result.iloc[0]
+            best_match: pd.Series = result.iloc[0]
 
             return {
                 "instances": {

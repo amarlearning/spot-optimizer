@@ -1,5 +1,6 @@
 import time
-from urllib.parse import urlparse
+from urllib.parse import urlparse, ParseResult
+from typing import Dict, Any
 
 import requests
 from requests.exceptions import RequestException
@@ -23,7 +24,7 @@ class AwsSpotAdvisorData:
         url: str = "https://spot-bid-advisor.s3.amazonaws.com/spot-advisor-data.json",
         request_timeout: int = 30,
         max_retries: int = 3,
-    ):
+    ) -> None:
         """
         Initialize the AWS Spot Advisor data fetcher.
 
@@ -33,15 +34,15 @@ class AwsSpotAdvisorData:
             max_retries: Maximum number of retry attempts for failed requests.
         """
         self._validate_url(url)
-        self.url = url
-        self.request_timeout = request_timeout
-        self.max_retries = max_retries
+        self.url: str = url
+        self.request_timeout: int = request_timeout
+        self.max_retries: int = max_retries
 
     @staticmethod
     def _validate_url(url: str) -> None:
         """Validate the URL format."""
         try:
-            result = urlparse(url)
+            result: ParseResult = urlparse(url)
             if not all([result.scheme, result.netloc]):
                 raise_validation_error(
                     "Invalid URL format - missing scheme or netloc",
@@ -69,7 +70,7 @@ class AwsSpotAdvisorData:
                 cause=e,
             )
 
-    def fetch_data(self) -> dict:
+    def fetch_data(self) -> Dict[str, Any]:
         """
         Fetch the Spot Advisor data from AWS.
 
@@ -80,7 +81,7 @@ class AwsSpotAdvisorData:
             NetworkError: If the request fails after all retries.
             DataError: If JSON parsing fails.
         """
-        last_exception = None
+        last_exception: Exception | None = None
         for attempt in range(self.max_retries):
             try:
                 response = requests.get(self.url, timeout=self.request_timeout)
@@ -118,7 +119,7 @@ class AwsSpotAdvisorData:
                 if attempt < self.max_retries - 1:
                     time.sleep(2**attempt)  # Exponential backoff
 
-        message = f"Failed to fetch data after {self.max_retries} attempts"
+        message: str = f"Failed to fetch data after {self.max_retries} attempts"
         logger.error(message, exc_info=last_exception)
         raise_network_error(
             message=message,

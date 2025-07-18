@@ -42,11 +42,16 @@ class StorageEngine(ABC):
         """Clear all data from the storage."""
         pass
 
-    def __enter__(self):
+    def __enter__(self) -> "StorageEngine":
         """Context manager entry."""
         self.connect()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[object],
+    ) -> None:
         """Context manager exit."""
         self.disconnect()

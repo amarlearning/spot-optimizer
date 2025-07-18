@@ -14,7 +14,7 @@ from spot_optimizer.exceptions import (
 
 logger = get_logger(__name__)
 
-CACHE_EXPIRY_SECONDS = 3600  # 1 hour
+CACHE_EXPIRY_SECONDS: int = 3600
 
 
 def should_refresh_data(db: StorageEngine) -> bool:
@@ -28,14 +28,14 @@ def should_refresh_data(db: StorageEngine) -> bool:
         bool: True if data should be refreshed
     """
     try:
-        result = db.query_data(
+        result: pd.DataFrame = db.query_data(
             "SELECT timestamp FROM cache_timestamp ORDER BY timestamp DESC LIMIT 1"
         )
         if result.empty:
             return True
 
-        last_update = result.iloc[0]["timestamp"]
-        time_since_update = (datetime.now() - last_update).total_seconds()
+        last_update: datetime = result.iloc[0]["timestamp"]
+        time_since_update: float = (datetime.now() - last_update).total_seconds()
 
         logger.info(f"Time since last update: {time_since_update} seconds")
 

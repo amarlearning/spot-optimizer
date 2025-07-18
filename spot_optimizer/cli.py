@@ -1,6 +1,7 @@
 import json
 import argparse
 import sys
+from typing import List, Optional
 
 from spot_optimizer import optimize
 from spot_optimizer.exceptions import (
@@ -41,7 +42,7 @@ def validate_positive_int(value: str, param_name: str) -> int:
         )
 
 
-def parse_args(args=None):
+def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     """
     Parse command line arguments.
 
@@ -102,7 +103,7 @@ def parse_args(args=None):
     return parser.parse_args(args)
 
 
-def main():
+def main() -> None:
     """Main entry point for the CLI."""
     try:
         args = parse_args()
