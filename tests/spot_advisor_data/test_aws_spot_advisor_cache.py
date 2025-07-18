@@ -115,7 +115,7 @@ def test_fetch_data_timeout(mock_get):
 
     advisor = AwsSpotAdvisorData(request_timeout=1)
 
-    with pytest.raises(NetworkError) as exc_info:
+    with pytest.raises(NetworkError):
         advisor.fetch_data()
 
     assert mock_get.call_count == advisor.max_retries
