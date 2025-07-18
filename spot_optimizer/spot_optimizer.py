@@ -1,5 +1,6 @@
 import os
 import logging
+import threading
 from typing import Dict, List, Optional
 from appdirs import user_data_dir
 
@@ -16,6 +17,7 @@ class SpotOptimizer:
     """Manages spot instance optimization with cached data access."""
     
     _instance: Optional['SpotOptimizer'] = None
+    _lock = threading.Lock()
     
     @staticmethod
     def get_default_db_path() -> str:
@@ -42,23 +44,53 @@ class SpotOptimizer:
         self.spot_advisor = AwsSpotAdvisorData()
         self.db = DuckDBStorage(db_path=self.db_path)
         self.db.connect()
+        self._initialized = True
         
-    def __del__(self):
-        """Cleanup database connection."""
-        if hasattr(self, 'db'):
-            self.db.disconnect()
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with proper cleanup."""
+        self.cleanup()
+        
+    def cleanup(self):
+        """Cleanup database connection and resources."""
+        if hasattr(self, 'db') and self.db is not None:
+            try:
+                self.db.disconnect()
+            except Exception as e:
+                logger.warning(f"Error during database cleanup: {e}")
+            finally:
+                self.db = None
     
     @classmethod
     def get_instance(cls) -> 'SpotOptimizer':
         """
-        Get or create the singleton instance.
+        Get or create the singleton instance using thread-safe double-checked locking.
         
         Returns:
             SpotOptimizer: Singleton instance of the optimizer
         """
+        # First check without lock for performance
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._lock:
+                # Double-checked locking pattern
+                if cls._instance is None:
+                    cls._instance = cls()
         return cls._instance
+    
+    @classmethod
+    def reset_instance(cls):
+        """
+        Reset the singleton instance for testing purposes.
+        This method should only be used in tests.
+        """
+        with cls._lock:
+            if cls._instance is not None:
+                # Cleanup existing instance
+                cls._instance.cleanup()
+                cls._instance = None
     
     def optimize(
         self,

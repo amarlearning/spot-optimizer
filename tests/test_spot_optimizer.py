@@ -1,5 +1,6 @@
 import os
 import pytest
+import threading
 from unittest.mock import Mock, patch
 import pandas as pd
 from spot_optimizer.spot_optimizer import SpotOptimizer
@@ -44,7 +45,7 @@ def test_singleton_pattern():
     second = SpotOptimizer.get_instance()
     assert first is second
     # Clean up singleton for other tests
-    SpotOptimizer._instance = None
+    SpotOptimizer.reset_instance()
 
 def test_initialization(optimizer, mock_db):
     """Test optimizer initialization."""
@@ -52,11 +53,12 @@ def test_initialization(optimizer, mock_db):
     mock_db.connect.assert_called_once()
 
 def test_cleanup(mock_db, mock_advisor):
-    """Test database cleanup on deletion."""
+    """Test database cleanup method."""
     optimizer = SpotOptimizer()
     optimizer.db = mock_db
-    optimizer.__del__()
+    optimizer.cleanup()
     mock_db.disconnect.assert_called_once()
+    assert optimizer.db is None
 
 @pytest.fixture
 def sample_query_result():
@@ -181,3 +183,87 @@ def test_optimize_invalid_parameters(optimizer):
     
     with pytest.raises(ValueError):
         optimizer.optimize(cores=8, memory=-1)
+
+def test_thread_safety():
+    """Test that singleton pattern is thread-safe."""
+    SpotOptimizer.reset_instance()
+    instances = []
+    
+    def get_instance():
+        instances.append(SpotOptimizer.get_instance())
+    
+    # Create multiple threads that try to get the instance
+    threads = []
+    for _ in range(10):
+        thread = threading.Thread(target=get_instance)
+        threads.append(thread)
+        thread.start()
+    
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+    
+    # All instances should be the same object
+    first_instance = instances[0]
+    for instance in instances:
+        assert instance is first_instance
+    
+    # Clean up
+    SpotOptimizer.reset_instance()
+
+def test_context_manager(mock_db, mock_advisor, mock_data_dir):
+    """Test context manager functionality."""
+    with patch('spot_optimizer.spot_optimizer.DuckDBStorage') as mock_db_class, \
+         patch('spot_optimizer.spot_optimizer.AwsSpotAdvisorData') as mock_advisor_class:
+        mock_db_class.return_value = mock_db
+        mock_advisor_class.return_value = mock_advisor
+        
+        with SpotOptimizer() as optimizer:
+            assert optimizer.db is mock_db
+            mock_db.connect.assert_called_once()
+        
+        # After exiting context, cleanup should be called
+        mock_db.disconnect.assert_called_once()
+
+def test_reset_instance_functionality():
+    """Test that reset_instance properly cleans up and resets the singleton."""
+    # Get an instance
+    first_instance = SpotOptimizer.get_instance()
+    
+    # Reset the instance
+    SpotOptimizer.reset_instance()
+    
+    # Get a new instance - should be different from the first one
+    second_instance = SpotOptimizer.get_instance()
+    
+    # Should be different objects (new instance created)
+    assert first_instance is not second_instance
+    
+    # Clean up
+    SpotOptimizer.reset_instance()
+
+def test_cleanup_with_exception(mock_db, mock_advisor):
+    """Test that cleanup handles exceptions gracefully."""
+    optimizer = SpotOptimizer()
+    optimizer.db = mock_db
+    
+    # Make disconnect raise an exception
+    mock_db.disconnect.side_effect = Exception("Database disconnect error")
+    
+    # Should not raise an exception
+    optimizer.cleanup()
+    
+    # DB should be set to None despite the error
+    assert optimizer.db is None
+
+def test_cleanup_idempotent():
+    """Test that cleanup can be called multiple times safely."""
+    optimizer = SpotOptimizer()
+    
+    # First cleanup
+    optimizer.cleanup()
+    assert optimizer.db is None
+    
+    # Second cleanup should not raise an error
+    optimizer.cleanup()
+    assert optimizer.db is None
