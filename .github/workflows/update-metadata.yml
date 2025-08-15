@@ -26,18 +26,24 @@ jobs:
       - name: Install dependencies
         run: |
           make install
-          pip install requests beautifulsoup4
 
       - name: Generate new metadata
-        run: python scripts/generate_instance_metadata.py
+        run: |
+          echo "Running metadata generation..."
+          python scripts/generate_instance_metadata.py
+          echo "Metadata generation completed"
         
       - name: Check for changes
         id: check_changes
         run: |
-          if [[ -n "$(git status --porcelain spot_optimizer/resources/instance_metadata.json)" ]]; then
-            echo "changes=true" >> $GITHUB_OUTPUT
-          else
+          git add spot_optimizer/resources/instance_metadata.json
+          if git diff --cached --quiet; then
+            echo "No changes detected in metadata file"
             echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected in metadata file"
+            echo "changes=true" >> $GITHUB_OUTPUT
+            git diff --cached --stat
           fi
 
       - name: Configure Git
@@ -51,10 +57,12 @@ jobs:
         run: |
           # Get current version from pyproject.toml
           CURRENT_VERSION=$(poetry version -s)
-          # Bump minor version
-          poetry version minor
+          echo "Current version: $CURRENT_VERSION"
+          # Bump patch version (not minor for metadata updates)
+          poetry version patch
           # Get new version
           NEW_VERSION=$(poetry version -s)
+          echo "New version: $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
       - name: Create Pull Request
@@ -75,9 +83,7 @@ jobs:
             - Bumps package version to ${{ env.NEW_VERSION }}
             
             ### Changes Summary
-            ```diff
-            $(git diff --stat spot_optimizer/resources/instance_metadata.json)
-            ```
+            The instance metadata has been updated with the latest information from AWS.
             
             Please review the changes in `instance_metadata.json` to ensure the data looks correct.
           branch: metadata-update
@@ -86,14 +92,15 @@ jobs:
             automated
             metadata-update
 
-      - name: Comment PR Status
+      - name: Output summary
         if: steps.check_changes.outputs.changes == 'true'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '✅ Metadata update completed successfully\n\nOnce this PR is merged, a new tag will be created and the package will be published to PyPI automatically via the publish workflow.'
-            })
+        run: |
+          echo "✅ Metadata update PR created successfully"
+          echo "Version bumped to: ${{ env.NEW_VERSION }}"
+          echo "Once merged, this will trigger the publish workflow"
+          
+      - name: No changes summary
+        if: steps.check_changes.outputs.changes == 'false'
+        run: |
+          echo "ℹ️ No changes detected in instance metadata"
+          echo "Skipping version bump and PR creation"
