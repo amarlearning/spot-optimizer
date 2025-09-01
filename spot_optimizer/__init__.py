@@ -1,9 +1,10 @@
+from spot_optimizer.config import SpotOptimizerConfig
 from spot_optimizer.optimizer_mode import Mode
 from spot_optimizer.spot_optimizer import SpotOptimizer
 
 default_optimizer = SpotOptimizer()
 
-__all__ = ['optimize', 'Mode', 'SpotOptimizer']
+__all__ = ['optimize', 'Mode', 'SpotOptimizer', 'SpotOptimizerConfig']
 
 def optimize(
     cores: int,
