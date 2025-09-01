@@ -209,11 +209,11 @@ spot-optimizer --help
 # Install dependencies
 make install
 
-# Run tests
+# Run all tests (unit + integration)
 make test
 
-# Run comprehensive test suite
-make test-all
+# Run only unit tests
+make test-unit
 
 # Check test coverage
 make coverage

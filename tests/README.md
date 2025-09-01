@@ -58,7 +58,10 @@ The integration test suite includes 16 comprehensive test categories:
 # Quick unit tests only
 make test-quick
 
-# Full unit test suite
+# Unit tests only
+make test-unit
+
+# All tests (unit + integration)
 make test
 
 # Unit tests with coverage
@@ -72,12 +75,6 @@ make test-integration-verbose
 
 # Performance-focused tests
 make test-performance
-
-# All tests (unit + integration)
-make test-all
-
-# CI test suite
-make test-ci
 ```
 
 

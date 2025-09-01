@@ -53,7 +53,7 @@ jobs:
         run: make install
         
       - name: Run unit tests
-        run: make test
+        run: make test-unit
         
       - name: Upload unit test results
         uses: actions/upload-artifact@v4
