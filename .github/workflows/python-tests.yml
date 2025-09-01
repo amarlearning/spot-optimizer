@@ -346,7 +346,12 @@ jobs:
         
       - name: Verify package contents
         run: |
-          poetry run pip install dist/*.whl
+          # Create a fresh virtual environment to test package installation
+          python -m venv test_env
+          source test_env/bin/activate
+          # Install the wheel package
+          pip install dist/*.whl
+          # Verify the package can be imported and used
           python -c "import spot_optimizer; print('Package installed successfully')"
           python -c "from spot_optimizer import optimize, Mode; print('Imports working')"
         
