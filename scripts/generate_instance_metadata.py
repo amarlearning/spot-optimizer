@@ -21,7 +21,12 @@ logger = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
 
-# Use us-east-1 as primary source (most complete data)
+# Use us-east-1 as primary source for instance metadata
+# Rationale: Instance specifications (vCPU, memory, storage type, architecture) are 
+# global constants - m5.large has the same specs regardless of region. us-east-1 
+# provides the most complete instance catalog as AWS typically launches new instance 
+# types here first. Region-specific data like pricing and spot interruption rates 
+# are handled separately by other components.
 BASE_URL = "https://pricing.us-east-1.amazonaws.com"
 PRICING_URL = f"{BASE_URL}/offers/v1.0/aws/AmazonEC2/current/us-east-1/index.json"
 
