@@ -1283,12 +1283,6 @@
     "storage": "instance",
     "vcpu": 96
   },
-  "dl2q.24xlarge": {
-    "arch": "x86_64",
-    "memory": 768.0,
-    "storage": "ebs",
-    "vcpu": 96
-  },
   "f1.16xlarge": {
     "arch": "x86_64",
     "memory": 976.0,
@@ -1666,42 +1660,6 @@
     "memory": 128.0,
     "storage": "ebs",
     "vcpu": 32
-  },
-  "hpc6a.48xlarge": {
-    "arch": "x86_64",
-    "memory": 384.0,
-    "storage": "ebs",
-    "vcpu": 96
-  },
-  "hpc6id.32xlarge": {
-    "arch": "x86_64",
-    "memory": 1024.0,
-    "storage": "instance",
-    "vcpu": 64
-  },
-  "hpc7a.12xlarge": {
-    "arch": "x86_64",
-    "memory": 768.0,
-    "storage": "ebs",
-    "vcpu": 24
-  },
-  "hpc7a.24xlarge": {
-    "arch": "x86_64",
-    "memory": 768.0,
-    "storage": "ebs",
-    "vcpu": 48
-  },
-  "hpc7a.48xlarge": {
-    "arch": "x86_64",
-    "memory": 768.0,
-    "storage": "ebs",
-    "vcpu": 96
-  },
-  "hpc7a.96xlarge": {
-    "arch": "x86_64",
-    "memory": 768.0,
-    "storage": "ebs",
-    "vcpu": 192
   },
   "hpc7g.16xlarge": {
     "arch": "arm64",
@@ -3611,12 +3569,6 @@
     "storage": "instance",
     "vcpu": 16
   },
-  "p5e.48xlarge": {
-    "arch": "x86_64",
-    "memory": 2048.0,
-    "storage": "instance",
-    "vcpu": 192
-  },
   "p5en.48xlarge": {
     "arch": "x86_64",
     "memory": 2048.0,
@@ -5086,12 +5038,6 @@
     "memory": 512.0,
     "storage": "instance",
     "vcpu": 128
-  },
-  "trn2.48xlarge": {
-    "arch": "x86_64",
-    "memory": 2048.0,
-    "storage": "ebs",
-    "vcpu": 192
   },
   "u-12tb1.112xlarge": {
     "arch": "x86_64",
