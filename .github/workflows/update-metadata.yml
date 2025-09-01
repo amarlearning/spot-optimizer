@@ -30,7 +30,7 @@ jobs:
       - name: Generate new metadata
         run: |
           echo "Running metadata generation..."
-          python scripts/generate_instance_metadata.py
+          poetry run python scripts/generate_instance_metadata.py
           echo "Metadata generation completed"
         
       - name: Check for changes
