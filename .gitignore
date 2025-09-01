@@ -169,3 +169,16 @@ cython_debug/
 # Performance test resources
 tests/resources/*.json
 tests/performance/*.log
+
+# VSCode
+.vscode/
+
+# KiRo
+.kiro/
+
+# PyTest
+.pytest_cache/
+
+# Python
+__pycache__/
+*.pyc
