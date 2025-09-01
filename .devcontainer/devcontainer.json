@@ -1,19 +1,46 @@
 {
-    "name": "Spark Cluster Optimiser",
-    "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu",
+    "name": "Spot Optimizer",
+    "image": "mcr.microsoft.com/devcontainers/python:3.10",
     "features": {
-        "python": "3.10.14"
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "installOhMyZsh": true
+        }
     },
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-python.python"
-            ]
-        },
-        "settings": {
-            "terminal.integrated.shell.linux": "/bin/bash"
+                "ms-python.python",
+                "ms-python.pylint",
+                "ms-python.black-formatter",
+                "ms-toolsai.jupyter",
+                "ms-vscode.makefile-tools"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.linting.enabled": true,
+                "python.linting.pylintEnabled": true,
+                "python.formatting.provider": "black",
+                "python.testing.pytestEnabled": true,
+                "python.testing.unittestEnabled": false,
+                "python.testing.pytestArgs": [
+                    "tests/"
+                ],
+                "files.exclude": {
+                    "**/__pycache__": true,
+                    "**/*.pyc": true,
+                    ".pytest_cache": true,
+                    "*.egg-info": true
+                }
+            }
         }
     },
-    "postCreateCommand": "pip install poetry",
-    "remoteUser": "vscode"
+    "postCreateCommand": "curl -sSL https://install.python-poetry.org | python3 - && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.bashrc && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.zshrc && make install",
+    "remoteUser": "vscode",
+    "mounts": [
+        "source=${localWorkspaceFolder}/.git,target=/workspaces/${localWorkspaceFolderBasename}/.git,type=bind,consistency=cached"
+    ],
+    "forwardPorts": [],
+    "portsAttributes": {}
 }
