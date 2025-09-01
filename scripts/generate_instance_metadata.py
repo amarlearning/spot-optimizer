@@ -1,115 +1,252 @@
-import requests
-from bs4 import BeautifulSoup
+#!/usr/bin/env python3
 import json
+import time
 import logging
 from pathlib import Path
-from typing import Dict, Any
-import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from typing import Dict, Any, List, Tuple
+from tqdm import tqdm
 
-logging.basicConfig(level=logging.INFO)
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
-class InstanceMetadataGenerator:
-    def __init__(self):
-        self.url = "https://aws.amazon.com/ec2/instance-types/"
-        self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
-        self.output_path = Path(__file__).parent.parent / "spot_optimizer" / "resources" / "instance_metadata.json"
+# Silence other loggers
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
 
-    def fetch_page(self) -> str:
-        try:
-            response = requests.get(self.url, headers=self.headers, timeout=30)
-            response.raise_for_status()
-            return response.text
-        except requests.RequestException as e:
-            logger.error(f"Failed to fetch AWS instance types page: {e}")
-            sys.exit(1)
+# Constants
+BASE_URL = "https://pricing.us-east-1.amazonaws.com"
+PRICING_INDEX = f"{BASE_URL}/offers/v1.0/aws/AmazonEC2/current/region_index.json"
 
-    def determine_architecture(self, instance_type: str) -> str:
-        # More accurate architecture detection
-        if any(x in instance_type.lower() for x in ['a1', 'c6g', 'm6g', 'r6g', 't4g']):
-            return "arm64"
-        return "x86_64"
+# AWS regions to process
+AWS_REGIONS = [
+    "us-east-1", "us-east-2", "us-west-1", "us-west-2",
+    "eu-west-1", "eu-west-2", "eu-west-3", "eu-central-1",
+    "ap-southeast-1", "ap-southeast-2", "ap-northeast-1", "ap-northeast-2",
+    "ap-south-1", "ca-central-1", "sa-east-1"
+]
 
-    def determine_storage_type(self, storage_info: str) -> str:
-        storage_info = storage_info.lower()
-        if any(x in storage_info for x in ['nvme', 'ssd']):
-            return "ssd"
-        return "ebs"
+# ARM processor identifiers
+ARM_IDENTIFIERS = [
+    "graviton",  # For processor name
+    "t4g", "m6g", "m7g", "c6g", "c7g", "r6g", "r7g"  # For instance types
+]
 
-    def parse_instance_data(self, html: str) -> Dict[str, Any]:
-        soup = BeautifulSoup(html, "html.parser")
-        instances = {}
+def create_session() -> requests.Session:
+    """Create an optimized requests session"""
+    session = requests.Session()
+    retries = Retry(
+        total=5,  # More retries
+        backoff_factor=0.1,  # Faster retry
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+        respect_retry_after_header=False  # Don't wait for retry-after
+    )
+    # Larger connection pools and longer timeouts
+    adapter = HTTPAdapter(
+        max_retries=retries,
+        pool_connections=50,
+        pool_maxsize=50,
+        pool_block=False
+    )
+    session.mount("https://", adapter)
+    return session
+
+def parse_memory(mem_str: str) -> float:
+    """Parse memory string to GiB value"""
+    try:
+        return float(''.join(c for c in mem_str if c.isdigit() or c == '.'))
+    except (ValueError, TypeError):
+        return 0.0
+
+def get_region_urls() -> Dict[str, str]:
+    """Get pricing URLs for all regions"""
+    try:
+        response = session.get(PRICING_INDEX, timeout=10)
+        response.raise_for_status()
+        data = response.json()
         
-        for section in soup.find_all("tr"):
-            cells = section.find_all('td')
-            if len(cells) < 6:
-                continue
+        urls = {}
+        for region in AWS_REGIONS:
+            region_data = data.get('regions', {}).get(region, {})
+            if region_data and 'currentVersionUrl' in region_data:
+                urls[region] = f"{BASE_URL}{region_data['currentVersionUrl']}"
+        
+        logger.info(f"Found pricing URLs for {len(urls)} regions")
+        return urls
+    except Exception as e:
+        logger.error(f"Failed to fetch region index: {e}")
+        raise
 
-            instance_type = cells[0].text.strip()
-            if any(x in instance_type for x in ["Instance Size", "Size", "Type"]):
+def process_region(region: str, url: str) -> Tuple[str, Dict[str, Dict[str, Any]]]:
+    """Process a single region's instance data"""
+    start_time = time.time()
+    instances = {}
+    product_count = 0
+    
+    try:
+        # Download data in binary mode
+        response = session.get(url, timeout=30, stream=True)
+        response.raise_for_status()
+        
+        # Read all data and decode once
+        raw_data = response.content.decode('utf-8')
+        
+        # Parse JSON
+        try:
+            data = json.loads(raw_data)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parse error in {region} at position {e.pos}: {e.msg}")
+            logger.debug(f"Raw data snippet around error: {raw_data[max(0, e.pos-100):e.pos+100]}")
+            raise
+        
+        # Process compute instances
+        for product in data.get('products', {}).values():
+            product_count += 1
+            if product_count % 5000 == 0:
+                logger.debug(f"Processed {product_count} products in {region}")
+                
+            if product.get('productFamily') != 'Compute Instance':
                 continue
-
-            try:
-                vcpu = int(cells[1].text.strip().replace("*", ""))
-                memory = float(cells[2].text.strip().replace(",", ""))
-                storage = cells[3].text.strip()
-            except (ValueError, IndexError) as e:
-                logger.warning(f"Skipping row due to parsing error: {e}")
+                
+            attrs = product.get('attributes', {})
+            itype = attrs.get('instanceType')
+            if not itype:
                 continue
-
-            instances[instance_type] = {
-                "arch": self.determine_architecture(instance_type),
-                "storage": self.determine_storage_type(storage),
-                "vcpu": vcpu,
-                "memory": memory
+                
+            # Quick check for required fields
+            vcpu = attrs.get('vcpu', '')
+            if not vcpu.isdigit():
+                continue
+            
+            # Efficient architecture check
+            proc_info = attrs.get('physicalProcessor', '').lower()
+            is_arm = any(arm in proc_info or arm in itype.lower() for arm in ARM_IDENTIFIERS)
+            
+            instances[itype] = {
+                "arch": "arm64" if is_arm else "x86_64",
+                "vcpu": int(vcpu),
+                "memory": parse_memory(attrs.get('memory', '0')),
+                "storage": "instance" if 'SSD' in attrs.get('storage', '') else "ebs"
             }
-
-        return instances
-
-    def validate_data(self, instances: Dict[str, Any]) -> bool:
-        if not instances:
-            logger.error("No instances found!")
-            return False
-
-        # Basic validation checks
-        for instance, data in instances.items():
-            if not all(k in data for k in ["arch", "storage", "vcpu", "memory"]):
-                logger.error(f"Missing required fields in instance {instance}")
-                return False
-            if data["vcpu"] <= 0 or data["memory"] <= 0:
-                logger.error(f"Invalid resource values for instance {instance}")
-                return False
-
-        return True
-
-    def save_metadata(self, instances: Dict[str, Any]) -> None:
-        try:
-            # Create parent directories if they don't exist
-            self.output_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            # Save with consistent formatting
-            with self.output_path.open('w') as f:
-                json.dump(instances, f, indent=4, sort_keys=True)
-            
-            logger.info(f"Successfully saved metadata for {len(instances)} instances")
-        except IOError as e:
-            logger.error(f"Failed to save metadata: {e}")
-            sys.exit(1)
-
-    def run(self) -> None:
-        logger.info("Starting instance metadata generation...")
-        html = self.fetch_page()
-        instances = self.parse_instance_data(html)
         
-        if self.validate_data(instances):
-            self.save_metadata(instances)
-            logger.info("Instance metadata generation completed successfully")
-        else:
-            logger.error("Data validation failed")
-            sys.exit(1)
+        process_time = time.time() - start_time
+        logger.info(f"Processed {region} in {process_time:.2f}s ({len(instances)} instances from {product_count} products)")
+        return region, instances
+        
+    except requests.exceptions.ReadTimeout:
+        logger.error(f"Timeout reading data from {region}")
+        return region, {}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request failed for {region}: {e}")
+        return region, {}
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON from {region}: {e}")
+        return region, {}
+    except Exception as e:
+        logger.error(f"Unexpected error processing {region}: {str(e)}")
+        return region, {}
+
+def merge_instance_data(region_data: List[Tuple[str, Dict[str, Dict[str, Any]]]]) -> Dict[str, Dict[str, Any]]:
+    """Merge instance data from all regions"""
+    merged = {}
+    for region, instances in region_data:
+        for itype, data in instances.items():
+            if itype not in merged:
+                merged[itype] = data
+            else:
+                # Fill in any missing data
+                for key, value in data.items():
+                    if not merged[itype].get(key) and value:
+                        merged[itype][key] = value
+    return merged
+
+def process_regions_batch(regions_batch, session):
+    """Process a batch of regions with shared session"""
+    results = []
+    for region, url in regions_batch:
+        try:
+            result = process_region(region, url)
+            results.append(result)
+        except Exception as e:
+            logger.error(f"Batch processing failed for {region}: {e}")
+    return results
+
+def main():
+    try:
+        global session
+        session = create_session()
+        
+        # Get region URLs
+        region_urls = get_region_urls()
+        if not region_urls:
+            logger.error("No region URLs found")
+            return
+            
+        # Convert to list for batching
+        regions = list(region_urls.items())
+        
+        # Process regions sequentially with timeout protection
+        results = []
+        with tqdm(total=len(regions), desc="Processing regions") as pbar:
+            for region, url in regions:
+                logger.info(f"Processing {region}")
+                
+                try:
+                    # Set a strict timeout for each region
+                    with ThreadPoolExecutor(max_workers=1) as executor:
+                        future = executor.submit(process_region, region, url)
+                        try:
+                            result = future.result(timeout=60)  # 60 second timeout per region
+                            results.append(result)
+                            pbar.set_postfix_str(f"Success: {region}")
+                        except TimeoutError:
+                            logger.error(f"Timeout processing {region}")
+                            results.append((region, {}))
+                            pbar.set_postfix_str(f"Timeout: {region}")
+                        except Exception as e:
+                            logger.error(f"Failed to process {region}: {e}")
+                            results.append((region, {}))
+                            pbar.set_postfix_str(f"Failed: {region}")
+                except Exception as e:
+                    logger.error(f"Executor failed for {region}: {e}")
+                    results.append((region, {}))
+                    pbar.set_postfix_str(f"Failed: {region}")
+                
+                pbar.update(1)
+                
+                # Small delay between regions
+                if region != regions[-1][0]:  # If not the last region
+                    time.sleep(1)
+        
+        # Merge and validate data
+        merged_data = merge_instance_data(results)
+        
+        # Filter incomplete entries
+        final_data = {
+            k: v for k, v in merged_data.items()
+            if all(v.get(f) for f in ["arch", "vcpu", "memory", "storage"])
+        }
+        
+        # Save results
+        output_path = Path(__file__).parent.parent / "spot_optimizer" / "resources" / "instance_metadata.json"
+        with open(output_path, 'w') as f:
+            json.dump(final_data, f, indent=2, sort_keys=True)
+            
+        logger.info(f"Successfully saved metadata for {len(final_data)} instances")
+        
+    except KeyboardInterrupt:
+        logger.warning("Operation cancelled by user")
+    except Exception as e:
+        logger.error(f"Failed to generate metadata: {e}")
+        raise
 
 if __name__ == "__main__":
-    generator = InstanceMetadataGenerator()
-    generator.run()
+    main()
