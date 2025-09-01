@@ -1,14 +1,27 @@
 name: Python Tests
 
-on: [push, pull_request]
+on: 
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run integration tests daily at 6 AM UTC to catch AWS API changes
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+env:
+  POETRY_VERSION: "1.7.1"
+  PYTHON_DEFAULT_VERSION: "3.11"
 
 jobs:
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false  # Don't cancel other jobs if one fails
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12']
-    name: Test Python ${{ matrix.python-version }}
+    name: Unit Tests Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
       
@@ -19,14 +32,115 @@ jobs:
           
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+        
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          
+      - name: Cache poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ matrix.python-version }}-
         
       - name: Install the project dependencies
         run: make install
         
-      - name: Run test
+      - name: Run unit tests
         run: make test
+        
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results-${{ matrix.python-version }}
+          path: |
+            .coverage
+            htmlcov/
+          retention-days: 7
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    name: Integration Tests
+    timeout-minutes: 15  # Set overall job timeout
+    strategy:
+      fail-fast: false
+      matrix:
+        test-config:
+          - name: "standard"
+            python-version: "3.11"
+            extra-args: ""
+          - name: "python-3.9"
+            python-version: "3.9"
+            extra-args: ""
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Python ${{ matrix.test-config.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.test-config.python-version }}
+          
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+        
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          
+      - name: Cache poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ matrix.test-config.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ matrix.test-config.python-version }}-
+        
+      - name: Install the project dependencies
+        run: make install
+        
+      - name: Run integration tests
+        run: make test-integration
+        env:
+          CI: true
+          PYTEST_TIMEOUT: 600  # 10 minute timeout for individual tests
+          SPOT_OPTIMIZER_DEBUG: 1
+        continue-on-error: false
+        timeout-minutes: 12  # Step timeout
+        
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results-${{ matrix.test-config.name }}
+          path: |
+            tests/test_integration.py
+            *.log
+            .coverage
+          retention-days: 7
+          
+      - name: Create integration test report
+        if: always()
+        run: |
+          echo "## Integration Test Results (${{ matrix.test-config.name }})" >> $GITHUB_STEP_SUMMARY
+          echo "Python Version: ${{ matrix.test-config.python-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "Test Configuration: ${{ matrix.test-config.name }}" >> $GITHUB_STEP_SUMMARY
+          if [ $? -eq 0 ]; then
+            echo "✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Integration tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
   coverage:
-    needs: test
+    needs: [unit-tests]
     runs-on: ubuntu-latest
     name: Coverage Report
     steps:
@@ -35,10 +149,25 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # Base coverage on a stable version
+          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
           
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+        
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          
+      - name: Cache poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_DEFAULT_VERSION }}-
         
       - name: Install the project dependencies
         run: make install
@@ -48,5 +177,182 @@ jobs:
       
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
+        if: github.event_name != 'schedule'  # Skip for scheduled runs
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false  # Don't fail CI if codecov upload fails
+          
+      - name: Generate coverage report summary
+        if: always()
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          if [ -f .coverage ]; then
+            poetry run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || echo "Coverage report generation failed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No coverage data found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # Comprehensive scheduled tests to catch AWS API changes
+  scheduled-integration:
+    runs-on: ubuntu-latest
+    name: Scheduled Integration Tests
+    if: github.event_name == 'schedule'
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+          
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+        
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          
+      - name: Install the project dependencies
+        run: make install
+        
+      - name: Run comprehensive integration tests
+        run: make test-integration
+        env:
+          CI: true
+          SPOT_OPTIMIZER_DEBUG: 1
+        continue-on-error: true  # Don't fail immediately, we want to create issue
+        id: integration-tests
+        
+      - name: Create detailed test report
+        if: always()
+        run: |
+          echo "## Scheduled Integration Test Report" > test-report.md
+          echo "Date: $(date)" >> test-report.md
+          echo "Python Version: ${{ env.PYTHON_DEFAULT_VERSION }}" >> test-report.md
+          echo "" >> test-report.md
+          if [ "${{ steps.integration-tests.outcome }}" = "success" ]; then
+            echo "✅ All integration tests passed" >> test-report.md
+          else
+            echo "❌ Some integration tests failed" >> test-report.md
+            echo "" >> test-report.md
+            echo "This might indicate:" >> test-report.md
+            echo "- Changes in AWS APIs" >> test-report.md
+            echo "- Service availability issues" >> test-report.md
+            echo "- Network connectivity problems" >> test-report.md
+            echo "- Changes in instance availability" >> test-report.md
+          fi
+        
+      - name: Upload scheduled test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scheduled-integration-results
+          path: |
+            test-report.md
+            *.log
+          retention-days: 30
+        
+      - name: Notify on failure
+        if: failure() || steps.integration-tests.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = 'The scheduled integration tests have failed. This might indicate changes in AWS APIs or service availability.';
+            
+            try {
+              if (fs.existsSync('test-report.md')) {
+                const report = fs.readFileSync('test-report.md', 'utf8');
+                body = report;
+              }
+            } catch (error) {
+              console.log('Could not read test report:', error);
+            }
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Scheduled Integration Tests Failed - ${new Date().toISOString().split('T')[0]}`,
+              body: body,
+              labels: ['bug', 'integration-test', 'scheduled-failure']
+            })
+
+  # Security and dependency scanning
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    if: github.event_name != 'schedule'  # Skip for scheduled runs
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+          
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+        
+      - name: Install dependencies
+        run: make install
+        
+      - name: Run security scan
+        run: |
+          poetry run pip install safety bandit
+          poetry run safety check --json || true
+          poetry run bandit -r spot_optimizer/ -f json || true
+        continue-on-error: true  # Don't fail CI for security issues, just report
+        
+      - name: Upload security scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-results
+          path: |
+            safety-report.json
+            bandit-report.json
+          retention-days: 30
+
+  # Build verification
+  build-verification:
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+    name: Build Verification
+    if: github.event_name != 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+          
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+        
+      - name: Install dependencies
+        run: make install
+        
+      - name: Build package
+        run: make build
+        
+      - name: Verify package contents
+        run: |
+          poetry run pip install dist/*.whl
+          python -c "import spot_optimizer; print('Package installed successfully')"
+          python -c "from spot_optimizer import optimize, Mode; print('Imports working')"
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 7

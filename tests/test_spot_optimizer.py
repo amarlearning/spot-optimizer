@@ -134,7 +134,7 @@ def test_optimize_with_ssd_only(optimizer, mock_db, sample_query_result):
     
     # Verify the query included SSD filter
     query_call = mock_db.query_data.call_args[0][0]
-    assert "storage_type = 'ssd'" in query_call
+    assert "storage_type = 'instance'" in query_call
 
 def test_optimize_with_arm_instances(optimizer, mock_db, sample_query_result):
     """Test optimization with ARM instances disabled."""

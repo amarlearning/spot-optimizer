@@ -124,22 +124,28 @@ class SpotOptimizer:
             """
             
             # Add filters based on requirements
-            storage_filter = "AND i.storage_type = 'ssd'" if ssd_only else ""
+            storage_filter = "AND i.storage_type = 'instance'" if ssd_only else ""
             arch_filter = "AND i.architecture != 'arm64'" if not arm_instances else ""
             family_filter = ""
             
+            # Build parameters in the correct order for the query
             params = [
-                cores, memory, region,  # Basic params
-                cores, cores,           # CPU waste calculation
-                memory, memory,         # Memory waste calculation
-                cores, memory,          # Minimum resource requirements
-                min_instances, max_instances  # Mode-specific instance bounds
+                cores, memory, region,  # Basic params for instances_needed calculation and region filter
             ]
             
+            # Add instance family parameters if specified (these go in the WHERE clause of the CTE)
             if instance_family:
                 placeholders = ','.join(['?' for _ in instance_family])
                 family_filter = f"AND i.instance_family IN ({placeholders})"
                 params.extend(instance_family)
+            
+            # Add remaining parameters for the main query
+            params.extend([
+                cores, cores,           # CPU waste calculation
+                memory, memory,         # Memory waste calculation
+                cores, memory,          # Minimum resource requirements
+                int(min_instances), int(max_instances)  # Mode-specific instance bounds (ensure integers)
+            ])
             
             query = query.format(
                 storage_filter=storage_filter,
