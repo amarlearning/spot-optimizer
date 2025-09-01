@@ -18,12 +18,13 @@ diskcache = "^5.6.3"
 appdirs = "^1.4.4"
 duckdb = "^1.1.3"
 pandas = "^2.2.0"
+bs4 = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 types-requests = "^2.32.0.20241016"
 pytest-cov = "^4.1.0"
-bs4 = "*"
+
 
 [build-system]
 requires = ["poetry-core"]
