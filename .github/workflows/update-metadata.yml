@@ -77,6 +77,14 @@ jobs:
           git tag "v${{ env.NEW_VERSION }}"
           git push origin main
           git push origin "v${{ env.NEW_VERSION }}"
+          
+      - name: Trigger publish workflow
+        if: steps.check_changes.outputs.changes == 'true'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: publish-trigger
+          client-payload: '{"version": "${{ env.NEW_VERSION }}"}'
 
       - name: Output summary
         if: steps.check_changes.outputs.changes == 'true'
