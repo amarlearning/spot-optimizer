@@ -65,39 +65,25 @@ jobs:
           echo "New version: $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Create Pull Request
+      - name: Commit changes
         if: steps.check_changes.outputs.changes == 'true'
-        uses: peter-evans/create-pull-request@v5
-        with:
-          commit-message: |
-            chore: update instance metadata and bump version to ${{ env.NEW_VERSION }}
-            
-            - Updates instance metadata from AWS EC2 page
-            - Bumps package version to ${{ env.NEW_VERSION }}
-          title: "chore: weekly instance metadata update"
-          body: |
-            🤖 Weekly Instance Metadata Update
-            
-            This PR:
-            - Updates instance metadata from AWS EC2 page
-            - Bumps package version to ${{ env.NEW_VERSION }}
-            
-            ### Changes Summary
-            The instance metadata has been updated with the latest information from AWS.
-            
-            Please review the changes in `instance_metadata.json` to ensure the data looks correct.
-          branch: metadata-update
-          base: main
-          labels: |
-            automated
-            metadata-update
+        run: |
+          git add spot_optimizer/resources/instance_metadata.json pyproject.toml poetry.lock
+          git commit -m "chore: update instance metadata and bump version to ${{ env.NEW_VERSION }}"
+          
+      - name: Create and push tag
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          git tag "v${{ env.NEW_VERSION }}"
+          git push origin main
+          git push origin "v${{ env.NEW_VERSION }}"
 
       - name: Output summary
         if: steps.check_changes.outputs.changes == 'true'
         run: |
-          echo "✅ Metadata update PR created successfully"
+          echo "✅ Metadata update committed and tagged successfully"
           echo "Version bumped to: ${{ env.NEW_VERSION }}"
-          echo "Once merged, this will trigger the publish workflow"
+          echo "Tag v${{ env.NEW_VERSION }} pushed - this will trigger the publish workflow"
           
       - name: No changes summary
         if: steps.check_changes.outputs.changes == 'false'
