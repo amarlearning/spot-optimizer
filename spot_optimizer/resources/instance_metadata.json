@@ -3383,6 +3383,66 @@
     "storage": "ebs",
     "vcpu": 4
   },
+  "m8a.12xlarge": {
+    "arch": "x86_64",
+    "memory": 192.0,
+    "storage": "ebs",
+    "vcpu": 48
+  },
+  "m8a.16xlarge": {
+    "arch": "x86_64",
+    "memory": 256.0,
+    "storage": "ebs",
+    "vcpu": 64
+  },
+  "m8a.24xlarge": {
+    "arch": "x86_64",
+    "memory": 384.0,
+    "storage": "ebs",
+    "vcpu": 96
+  },
+  "m8a.2xlarge": {
+    "arch": "x86_64",
+    "memory": 32.0,
+    "storage": "ebs",
+    "vcpu": 8
+  },
+  "m8a.48xlarge": {
+    "arch": "x86_64",
+    "memory": 768.0,
+    "storage": "ebs",
+    "vcpu": 192
+  },
+  "m8a.4xlarge": {
+    "arch": "x86_64",
+    "memory": 64.0,
+    "storage": "ebs",
+    "vcpu": 16
+  },
+  "m8a.8xlarge": {
+    "arch": "x86_64",
+    "memory": 128.0,
+    "storage": "ebs",
+    "vcpu": 32
+  },
+  "m8a.large": {
+    "arch": "x86_64",
+    "memory": 8.0,
+    "storage": "ebs",
+    "vcpu": 2
+  },
+  "m8a.medium": {
+    "arch": "x86_64",
+    "memory": 4.0,
+    "storage": "ebs",
+    "vcpu": 1
+  },
+  "m8a.xlarge": {
+    "arch": "x86_64",
+    "memory": 16.0,
+    "storage": "ebs",
+    "vcpu": 4
+  },
   "m8g.12xlarge": {
     "arch": "arm64",
     "memory": 192.0,

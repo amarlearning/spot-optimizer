@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spot-optimizer"
-version = "1.2.3"
+version = "1.2.4"
 description = "AWS EC2 spot instance optimizer"
 authors = ["Amar Prakash <amar.om1994@gmail.com>"]
 readme = "README.md"
