@@ -1001,6 +1001,66 @@
     "storage": "ebs",
     "vcpu": 4
   },
+  "c8a.12xlarge": {
+    "arch": "x86_64",
+    "memory": 96.0,
+    "storage": "ebs",
+    "vcpu": 48
+  },
+  "c8a.16xlarge": {
+    "arch": "x86_64",
+    "memory": 128.0,
+    "storage": "ebs",
+    "vcpu": 64
+  },
+  "c8a.24xlarge": {
+    "arch": "x86_64",
+    "memory": 192.0,
+    "storage": "ebs",
+    "vcpu": 96
+  },
+  "c8a.2xlarge": {
+    "arch": "x86_64",
+    "memory": 16.0,
+    "storage": "ebs",
+    "vcpu": 8
+  },
+  "c8a.48xlarge": {
+    "arch": "x86_64",
+    "memory": 384.0,
+    "storage": "ebs",
+    "vcpu": 192
+  },
+  "c8a.4xlarge": {
+    "arch": "x86_64",
+    "memory": 32.0,
+    "storage": "ebs",
+    "vcpu": 16
+  },
+  "c8a.8xlarge": {
+    "arch": "x86_64",
+    "memory": 64.0,
+    "storage": "ebs",
+    "vcpu": 32
+  },
+  "c8a.large": {
+    "arch": "x86_64",
+    "memory": 4.0,
+    "storage": "ebs",
+    "vcpu": 2
+  },
+  "c8a.medium": {
+    "arch": "x86_64",
+    "memory": 2.0,
+    "storage": "ebs",
+    "vcpu": 1
+  },
+  "c8a.xlarge": {
+    "arch": "x86_64",
+    "memory": 8.0,
+    "storage": "ebs",
+    "vcpu": 4
+  },
   "c8g.12xlarge": {
     "arch": "arm64",
     "memory": 96.0,
@@ -5425,7 +5485,7 @@
   },
   "u7i-12tb.224xlarge": {
     "arch": "x86_64",
-    "memory": 9216.0,
+    "memory": 12288.0,
     "storage": "ebs",
     "vcpu": 896
   },
