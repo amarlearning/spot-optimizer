@@ -1121,6 +1121,60 @@
     "storage": "ebs",
     "vcpu": 4
   },
+  "c8gb.12xlarge": {
+    "arch": "arm64",
+    "memory": 96.0,
+    "storage": "ebs",
+    "vcpu": 48
+  },
+  "c8gb.16xlarge": {
+    "arch": "arm64",
+    "memory": 128.0,
+    "storage": "ebs",
+    "vcpu": 64
+  },
+  "c8gb.24xlarge": {
+    "arch": "arm64",
+    "memory": 192.0,
+    "storage": "ebs",
+    "vcpu": 96
+  },
+  "c8gb.2xlarge": {
+    "arch": "arm64",
+    "memory": 16.0,
+    "storage": "ebs",
+    "vcpu": 8
+  },
+  "c8gb.4xlarge": {
+    "arch": "arm64",
+    "memory": 32.0,
+    "storage": "ebs",
+    "vcpu": 16
+  },
+  "c8gb.8xlarge": {
+    "arch": "arm64",
+    "memory": 64.0,
+    "storage": "ebs",
+    "vcpu": 32
+  },
+  "c8gb.large": {
+    "arch": "arm64",
+    "memory": 4.0,
+    "storage": "ebs",
+    "vcpu": 2
+  },
+  "c8gb.medium": {
+    "arch": "arm64",
+    "memory": 2.0,
+    "storage": "ebs",
+    "vcpu": 1
+  },
+  "c8gb.xlarge": {
+    "arch": "arm64",
+    "memory": 8.0,
+    "storage": "ebs",
+    "vcpu": 4
+  },
   "c8gd.12xlarge": {
     "arch": "arm64",
     "memory": 96.0,
