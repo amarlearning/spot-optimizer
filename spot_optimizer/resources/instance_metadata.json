@@ -5951,6 +5951,78 @@
     "storage": "ebs",
     "vcpu": 4
   },
+  "x8i.12xlarge": {
+    "arch": "x86_64",
+    "memory": 768.0,
+    "storage": "ebs",
+    "vcpu": 48
+  },
+  "x8i.16xlarge": {
+    "arch": "x86_64",
+    "memory": 1024.0,
+    "storage": "ebs",
+    "vcpu": 64
+  },
+  "x8i.24xlarge": {
+    "arch": "x86_64",
+    "memory": 1536.0,
+    "storage": "ebs",
+    "vcpu": 96
+  },
+  "x8i.2xlarge": {
+    "arch": "x86_64",
+    "memory": 128.0,
+    "storage": "ebs",
+    "vcpu": 8
+  },
+  "x8i.32xlarge": {
+    "arch": "x86_64",
+    "memory": 2048.0,
+    "storage": "ebs",
+    "vcpu": 128
+  },
+  "x8i.48xlarge": {
+    "arch": "x86_64",
+    "memory": 3072.0,
+    "storage": "ebs",
+    "vcpu": 192
+  },
+  "x8i.4xlarge": {
+    "arch": "x86_64",
+    "memory": 256.0,
+    "storage": "ebs",
+    "vcpu": 16
+  },
+  "x8i.64xlarge": {
+    "arch": "x86_64",
+    "memory": 4096.0,
+    "storage": "ebs",
+    "vcpu": 256
+  },
+  "x8i.8xlarge": {
+    "arch": "x86_64",
+    "memory": 512.0,
+    "storage": "ebs",
+    "vcpu": 32
+  },
+  "x8i.96xlarge": {
+    "arch": "x86_64",
+    "memory": 6144.0,
+    "storage": "ebs",
+    "vcpu": 384
+  },
+  "x8i.large": {
+    "arch": "x86_64",
+    "memory": 32.0,
+    "storage": "ebs",
+    "vcpu": 2
+  },
+  "x8i.xlarge": {
+    "arch": "x86_64",
+    "memory": 64.0,
+    "storage": "ebs",
+    "vcpu": 4
+  },
   "z1d.12xlarge": {
     "arch": "x86_64",
     "memory": 384.0,
