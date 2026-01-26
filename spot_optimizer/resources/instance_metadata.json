@@ -1145,6 +1145,12 @@
     "storage": "ebs",
     "vcpu": 8
   },
+  "c8gb.48xlarge": {
+    "arch": "arm64",
+    "memory": 384.0,
+    "storage": "ebs",
+    "vcpu": 192
+  },
   "c8gb.4xlarge": {
     "arch": "arm64",
     "memory": 32.0,
@@ -1840,6 +1846,42 @@
     "memory": 16.0,
     "storage": "instance",
     "vcpu": 4
+  },
+  "g7e.12xlarge": {
+    "arch": "x86_64",
+    "memory": 512.0,
+    "storage": "instance",
+    "vcpu": 48
+  },
+  "g7e.24xlarge": {
+    "arch": "x86_64",
+    "memory": 1024.0,
+    "storage": "instance",
+    "vcpu": 96
+  },
+  "g7e.2xlarge": {
+    "arch": "x86_64",
+    "memory": 64.0,
+    "storage": "instance",
+    "vcpu": 8
+  },
+  "g7e.48xlarge": {
+    "arch": "x86_64",
+    "memory": 2048.0,
+    "storage": "instance",
+    "vcpu": 192
+  },
+  "g7e.4xlarge": {
+    "arch": "x86_64",
+    "memory": 128.0,
+    "storage": "instance",
+    "vcpu": 16
+  },
+  "g7e.8xlarge": {
+    "arch": "x86_64",
+    "memory": 256.0,
+    "storage": "instance",
+    "vcpu": 32
   },
   "gr6.4xlarge": {
     "arch": "x86_64",
@@ -3641,6 +3683,12 @@
     "storage": "ebs",
     "vcpu": 8
   },
+  "m8gb.48xlarge": {
+    "arch": "arm64",
+    "memory": 768.0,
+    "storage": "ebs",
+    "vcpu": 192
+  },
   "m8gb.4xlarge": {
     "arch": "arm64",
     "memory": 64.0,
@@ -5158,6 +5206,12 @@
     "memory": 64.0,
     "storage": "ebs",
     "vcpu": 8
+  },
+  "r8gb.48xlarge": {
+    "arch": "arm64",
+    "memory": 1536.0,
+    "storage": "ebs",
+    "vcpu": 192
   },
   "r8gb.4xlarge": {
     "arch": "arm64",
