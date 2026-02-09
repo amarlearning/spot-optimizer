@@ -1409,6 +1409,72 @@
     "storage": "ebs",
     "vcpu": 4
   },
+  "c8id.12xlarge": {
+    "arch": "x86_64",
+    "memory": 96.0,
+    "storage": "instance",
+    "vcpu": 48
+  },
+  "c8id.16xlarge": {
+    "arch": "x86_64",
+    "memory": 128.0,
+    "storage": "instance",
+    "vcpu": 64
+  },
+  "c8id.24xlarge": {
+    "arch": "x86_64",
+    "memory": 192.0,
+    "storage": "instance",
+    "vcpu": 96
+  },
+  "c8id.2xlarge": {
+    "arch": "x86_64",
+    "memory": 16.0,
+    "storage": "instance",
+    "vcpu": 8
+  },
+  "c8id.32xlarge": {
+    "arch": "x86_64",
+    "memory": 256.0,
+    "storage": "instance",
+    "vcpu": 128
+  },
+  "c8id.48xlarge": {
+    "arch": "x86_64",
+    "memory": 384.0,
+    "storage": "instance",
+    "vcpu": 192
+  },
+  "c8id.4xlarge": {
+    "arch": "x86_64",
+    "memory": 32.0,
+    "storage": "instance",
+    "vcpu": 16
+  },
+  "c8id.8xlarge": {
+    "arch": "x86_64",
+    "memory": 64.0,
+    "storage": "instance",
+    "vcpu": 32
+  },
+  "c8id.96xlarge": {
+    "arch": "x86_64",
+    "memory": 768.0,
+    "storage": "instance",
+    "vcpu": 384
+  },
+  "c8id.large": {
+    "arch": "x86_64",
+    "memory": 4.0,
+    "storage": "instance",
+    "vcpu": 2
+  },
+  "c8id.xlarge": {
+    "arch": "x86_64",
+    "memory": 8.0,
+    "storage": "instance",
+    "vcpu": 4
+  },
   "cc2.8xlarge": {
     "arch": "x86_64",
     "memory": 60.5,
@@ -3947,6 +4013,72 @@
     "storage": "ebs",
     "vcpu": 4
   },
+  "m8id.12xlarge": {
+    "arch": "x86_64",
+    "memory": 192.0,
+    "storage": "instance",
+    "vcpu": 48
+  },
+  "m8id.16xlarge": {
+    "arch": "x86_64",
+    "memory": 256.0,
+    "storage": "instance",
+    "vcpu": 64
+  },
+  "m8id.24xlarge": {
+    "arch": "x86_64",
+    "memory": 384.0,
+    "storage": "instance",
+    "vcpu": 96
+  },
+  "m8id.2xlarge": {
+    "arch": "x86_64",
+    "memory": 32.0,
+    "storage": "instance",
+    "vcpu": 8
+  },
+  "m8id.32xlarge": {
+    "arch": "x86_64",
+    "memory": 512.0,
+    "storage": "instance",
+    "vcpu": 128
+  },
+  "m8id.48xlarge": {
+    "arch": "x86_64",
+    "memory": 768.0,
+    "storage": "instance",
+    "vcpu": 192
+  },
+  "m8id.4xlarge": {
+    "arch": "x86_64",
+    "memory": 64.0,
+    "storage": "instance",
+    "vcpu": 16
+  },
+  "m8id.8xlarge": {
+    "arch": "x86_64",
+    "memory": 128.0,
+    "storage": "instance",
+    "vcpu": 32
+  },
+  "m8id.96xlarge": {
+    "arch": "x86_64",
+    "memory": 1536.0,
+    "storage": "instance",
+    "vcpu": 384
+  },
+  "m8id.large": {
+    "arch": "x86_64",
+    "memory": 8.0,
+    "storage": "instance",
+    "vcpu": 2
+  },
+  "m8id.xlarge": {
+    "arch": "x86_64",
+    "memory": 16.0,
+    "storage": "instance",
+    "vcpu": 4
+  },
   "p2.16xlarge": {
     "arch": "x86_64",
     "memory": 732.0,
@@ -5469,6 +5601,72 @@
     "arch": "x86_64",
     "memory": 32.0,
     "storage": "ebs",
+    "vcpu": 4
+  },
+  "r8id.12xlarge": {
+    "arch": "x86_64",
+    "memory": 384.0,
+    "storage": "instance",
+    "vcpu": 48
+  },
+  "r8id.16xlarge": {
+    "arch": "x86_64",
+    "memory": 512.0,
+    "storage": "instance",
+    "vcpu": 64
+  },
+  "r8id.24xlarge": {
+    "arch": "x86_64",
+    "memory": 768.0,
+    "storage": "instance",
+    "vcpu": 96
+  },
+  "r8id.2xlarge": {
+    "arch": "x86_64",
+    "memory": 64.0,
+    "storage": "instance",
+    "vcpu": 8
+  },
+  "r8id.32xlarge": {
+    "arch": "x86_64",
+    "memory": 1024.0,
+    "storage": "instance",
+    "vcpu": 128
+  },
+  "r8id.48xlarge": {
+    "arch": "x86_64",
+    "memory": 1536.0,
+    "storage": "instance",
+    "vcpu": 192
+  },
+  "r8id.4xlarge": {
+    "arch": "x86_64",
+    "memory": 128.0,
+    "storage": "instance",
+    "vcpu": 16
+  },
+  "r8id.8xlarge": {
+    "arch": "x86_64",
+    "memory": 256.0,
+    "storage": "instance",
+    "vcpu": 32
+  },
+  "r8id.96xlarge": {
+    "arch": "x86_64",
+    "memory": 3072.0,
+    "storage": "instance",
+    "vcpu": 384
+  },
+  "r8id.large": {
+    "arch": "x86_64",
+    "memory": 16.0,
+    "storage": "instance",
+    "vcpu": 2
+  },
+  "r8id.xlarge": {
+    "arch": "x86_64",
+    "memory": 32.0,
+    "storage": "instance",
     "vcpu": 4
   },
   "t1.micro": {
