@@ -3665,6 +3665,48 @@
     "storage": "ebs",
     "vcpu": 4
   },
+  "m8azn.12xlarge": {
+    "arch": "x86_64",
+    "memory": 192.0,
+    "storage": "ebs",
+    "vcpu": 48
+  },
+  "m8azn.24xlarge": {
+    "arch": "x86_64",
+    "memory": 384.0,
+    "storage": "ebs",
+    "vcpu": 96
+  },
+  "m8azn.3xlarge": {
+    "arch": "x86_64",
+    "memory": 48.0,
+    "storage": "ebs",
+    "vcpu": 12
+  },
+  "m8azn.6xlarge": {
+    "arch": "x86_64",
+    "memory": 96.0,
+    "storage": "ebs",
+    "vcpu": 24
+  },
+  "m8azn.large": {
+    "arch": "x86_64",
+    "memory": 8.0,
+    "storage": "ebs",
+    "vcpu": 2
+  },
+  "m8azn.medium": {
+    "arch": "x86_64",
+    "memory": 4.0,
+    "storage": "ebs",
+    "vcpu": 1
+  },
+  "m8azn.xlarge": {
+    "arch": "x86_64",
+    "memory": 16.0,
+    "storage": "ebs",
+    "vcpu": 4
+  },
   "m8g.12xlarge": {
     "arch": "arm64",
     "memory": 192.0,
