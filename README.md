@@ -49,7 +49,7 @@ It ensures that the selected configuration meets or exceeds the user's requireme
 from spot_optimizer import optimize
 
 result = optimize(cores=64, memory=256, region="us-east-1", mode="fault_tolerance")
-# Output: {"instances": {"type": "m5.4xlarge", "count": 4}, ...}
+# result["candidates"]: ranked instance types, each with the count needed on its own
 
 # Step 2: Use the recommendations with AWS EC2 Fleet
 import boto3
@@ -62,18 +62,21 @@ response = ec2.create_fleet(
                 'LaunchTemplateName': 'my-template',
                 'Version': '1'
             },
+            # Diversify across every candidate, weighted by vCPUs per instance
             'Overrides': [
                 {
-                    'InstanceType': result['instances']['type'],  # m5.4xlarge
-                    'AvailabilityZone': 'us-east-1a',
+                    'InstanceType': c['instances']['type'],
+                    'WeightedCapacity': c['total_cores'] / c['instances']['count'],
                 }
+                for c in result['candidates']
             ]
         }
     ],
     TargetCapacitySpecification={
-        'TotalTargetCapacity': result['instances']['count'],  # 4
+        'TotalTargetCapacity': 64,  # vCPUs
         'DefaultTargetCapacityType': 'spot'
-    }
+    },
+    SpotOptions={'AllocationStrategy': 'price-capacity-optimized'}
 )
 ```
 
@@ -139,22 +142,27 @@ result = optimize(
     ssd_only=True,
     arm_instances=False,
     instance_family=["m6i", "r6i"],
-    mode="balanced"
+    mode="balanced",
+    top_n=5
 )
 
-# Enhanced output with reliability metrics
+# Top-level keys are the best match; "candidates" is the ranked list (best first)
 {
    "instances": {
-      "type": "m6i.2xlarge",
-      "count": 1
+      "type": "m6i.xlarge",
+      "count": 2
    },
-   "mode": "balanced",
    "total_cores": 8,
    "total_ram": 32,
    "reliability": {
-      "spot_score": 0.85,
-      "interruption_rate": "< 5%"
-   }
+      "spot_score": 72,       # % savings over On-Demand (Spot Advisor "s")
+      "interruption_rate": 0  # Spot Advisor bucket: 0 = <5%, 1 = 5-10%, ... 4 = >20%
+   },
+   "mode": "balanced",
+   "candidates": [
+      {"instances": {"type": "m6i.xlarge", "count": 2}, "total_cores": 8, "total_ram": 32, "reliability": {...}},
+      {"instances": {"type": "r6i.xlarge", "count": 2}, "total_cores": 8, "total_ram": 64, "reliability": {...}}
+   ]
 }
 ```
 
@@ -172,7 +180,8 @@ spot-optimizer \
     --ssd-only \
     --no-arm \
     --instance-family m6i r6i \
-    --mode balanced
+    --mode balanced \
+    --top-n 5
 
 # Get help
 spot-optimizer --help
@@ -198,6 +207,7 @@ spot-optimizer --help
    - **`latency`**: Optimize for fewer, larger nodes (lower latency).
    - **`fault_tolerance`**: Optimize for more, smaller nodes (better fault tolerance).
    - **`balanced`**: Aim for a middle ground between fewer and more nodes.
+7. **top_n (int)**: How many ranked instance types to return in `candidates` (default: 5). Spot works best when spread across several types, so pass the whole list to your Fleet or ASG.
 
 ---
 

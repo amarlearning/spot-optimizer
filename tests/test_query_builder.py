@@ -17,7 +17,7 @@ class TestOptimizationQueryBuilder:
         assert "FROM instance_types i" in query
         assert "JOIN spot_advisor s" in query
         assert "ORDER BY" in query
-        assert "LIMIT 1" in query
+        assert "LIMIT ?" in query
 
     def test_build_optimization_query_with_ssd_filter(self):
         """Test query building with SSD filter."""
@@ -67,7 +67,8 @@ class TestOptimizationQueryBuilder:
             8, 8,                # CPU waste calculation
             32, 32,              # Memory waste calculation
             8, 32,               # Minimum resource requirements
-            1, 10                # Instance bounds
+            1, 10,               # Instance bounds
+            5                    # top_n default
         ]
         
         assert params == expected_params
@@ -89,7 +90,8 @@ class TestOptimizationQueryBuilder:
             4, 4,                # CPU waste calculation
             16, 16,              # Memory waste calculation
             4, 16,               # Minimum resource requirements
-            2, 8                 # Instance bounds
+            2, 8,                # Instance bounds
+            5                    # top_n default
         ]
         
         assert params == expected_params

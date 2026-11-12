@@ -66,11 +66,16 @@ class SpotOptimizer:
         instance_family: List[str] = None,
         emr_version: str = None,
         mode: str = Mode.BALANCED.value,
+        top_n: int = 5,
     ) -> Dict:
         """
         Optimize spot instance configuration based on requirements.
+
+        The top-level keys describe the best match; ``candidates`` lists up to
+        ``top_n`` ranked instance types so callers can diversify (e.g. as
+        EC2 Fleet overrides) instead of relying on a single type.
         """
-        validate_optimization_params(cores, memory, mode)
+        validate_optimization_params(cores, memory, mode, top_n)
         
         try:
             ensure_fresh_data(self.spot_advisor, self.db)
@@ -92,7 +97,8 @@ class SpotOptimizer:
                 region=region,
                 instance_family=instance_family,
                 min_instances=min_instances,
-                max_instances=max_instances
+                max_instances=max_instances,
+                top_n=top_n
             )
             
             result = self.db.query_data(query, params)
@@ -110,21 +116,23 @@ class SpotOptimizer:
                 )
                 raise ValueError(error_msg)
             
-            best_match = result.iloc[0]
-            
-            return {
-                "instances": {
-                    "type": best_match['instance_type'],
-                    "count": int(best_match['instances_needed'])
-                },
-                "mode": mode,
-                "total_cores": int(best_match['total_cores']),
-                "total_ram": int(best_match['total_memory']),
-                "reliability": {
-                    "spot_score": int(best_match['spot_score']),
-                    "interruption_rate": int(best_match['interruption_rate'])
+            candidates = [
+                {
+                    "instances": {
+                        "type": row['instance_type'],
+                        "count": int(row['instances_needed'])
+                    },
+                    "total_cores": int(row['total_cores']),
+                    "total_ram": int(row['total_memory']),
+                    "reliability": {
+                        "spot_score": int(row['spot_score']),
+                        "interruption_rate": int(row['interruption_rate'])
+                    }
                 }
-            }
+                for _, row in result.iterrows()
+            ]
+
+            return {**candidates[0], "mode": mode, "candidates": candidates}
             
         except Exception as e:
             logger.error(f"Error optimizing instances: {e}")

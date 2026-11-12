@@ -68,7 +68,7 @@ class OptimizationQueryBuilder:
                 interruption_rate ASC,
                 spot_score DESC,
                 (cpu_waste_pct + memory_waste_pct) ASC
-            LIMIT 1
+            LIMIT ?
         """
         
         return query
@@ -80,7 +80,8 @@ class OptimizationQueryBuilder:
         region: str,
         instance_family: Optional[List[str]],
         min_instances: int,
-        max_instances: int
+        max_instances: int,
+        top_n: int = 5
     ) -> List:
         """
         Build the parameter list for the optimization query.
@@ -110,7 +111,8 @@ class OptimizationQueryBuilder:
             cores, cores,           # CPU waste calculation
             memory, memory,         # Memory waste calculation
             cores, memory,          # Minimum resource requirements
-            int(min_instances), int(max_instances)  # Mode-specific instance bounds
+            int(min_instances), int(max_instances),  # Mode-specific instance bounds
+            int(top_n)              # Number of ranked candidates
         ])
         
         return params

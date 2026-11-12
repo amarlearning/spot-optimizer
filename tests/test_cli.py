@@ -99,7 +99,8 @@ def test_main_success(mock_optimize):
                 arm_instances=False,
                 instance_family=None,
                 emr_version=None,
-                mode="balanced"
+                mode="balanced",
+                top_n=5
             )
             
             # Verify output was correct JSON

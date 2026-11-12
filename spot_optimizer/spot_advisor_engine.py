@@ -1,4 +1,5 @@
 import logging
+import threading
 from datetime import datetime, timedelta
 
 from spot_optimizer.spot_advisor_data.aws_spot_advisor_cache import AwsSpotAdvisorData
@@ -7,6 +8,11 @@ from spot_optimizer.storage_engine.storage_engine import StorageEngine
 logger = logging.getLogger(__name__)
 
 CACHE_EXPIRY_SECONDS = 3600  # 1 hour
+
+# Serialises check-then-refresh so concurrent callers can't each clear and
+# re-insert the data (which duplicated rows and briefly emptied the tables).
+# ponytail: process-wide lock; DuckDB's file lock already blocks other processes.
+_refresh_lock = threading.Lock()
 
 def should_refresh_data(db: StorageEngine) -> bool:
     """
@@ -68,10 +74,11 @@ def ensure_fresh_data(
         db: Database connection
     """
     try:
-        if should_refresh_data(db):
-            refresh_spot_data(advisor, db)
-        else:
-            logger.info("Using existing spot advisor data from database")
+        with _refresh_lock:
+            if should_refresh_data(db):
+                refresh_spot_data(advisor, db)
+            else:
+                logger.info("Using existing spot advisor data from database")
     except Exception as e:
         logger.error(f"Error ensuring fresh data: {e}")
         raise

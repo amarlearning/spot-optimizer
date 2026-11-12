@@ -15,6 +15,7 @@ def optimize(
     instance_family: list[str] = None,
     emr_version: str = None,
     mode: str = Mode.BALANCED.value,
+    top_n: int = 5,
 ) -> dict:
     """
     Optimize spot instance configuration based on requirements.
@@ -28,9 +29,10 @@ def optimize(
         instance_family: List of instance families to consider
         emr_version: EMR version if using with EMR
         mode: Optimization mode (default: BALANCED)
-        
+        top_n: Max number of ranked instance types in "candidates" (default: 5)
+
     Returns:
-        dict: Optimized instance configuration
+        dict: Best match at the top level, plus a ranked "candidates" list
     
     Example:
         >>> from spot_optimizer import optimize
@@ -47,7 +49,10 @@ def optimize(
             },
             "mode": "balanced",
             "total_cores": 8,
-            "total_ram": 32
+            "total_ram": 32,
+            "reliability": {...},
+            "mode": "balanced",
+            "candidates": [{"instances": {...}, ...}, ...]
         }
     """
     return default_optimizer.optimize(
@@ -59,4 +64,5 @@ def optimize(
         instance_family=instance_family,
         emr_version=emr_version,
         mode=mode,
+        top_n=top_n,
     )

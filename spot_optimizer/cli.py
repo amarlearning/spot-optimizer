@@ -88,6 +88,12 @@ def parse_args(args=None):
         choices=["latency", "fault_tolerance", "balanced"],
         help='Optimization mode: "latency", "fault_tolerance", or "balanced".',
     )
+    parser.add_argument(
+        "--top-n",
+        type=lambda x: validate_positive_int(x, "top-n"),
+        default=5,
+        help="Number of ranked instance types to return as candidates.",
+    )
 
     return parser.parse_args(args)
 
@@ -105,6 +111,7 @@ def main():
         instance_family=args.instance_family,
         emr_version=args.emr_version,
         mode=args.mode,
+        top_n=args.top_n,
     )
 
     print(json.dumps(result, indent=2))

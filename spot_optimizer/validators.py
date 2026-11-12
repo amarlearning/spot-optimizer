@@ -23,8 +23,11 @@ def validate_optimization_params(
     cores: int,
     memory: int,
     mode: str = Mode.BALANCED.value,
+    top_n: int = 5,
 ) -> None:
     """Validate all optimization parameters."""
     validate_cores(cores)
     validate_memory(memory)
-    validate_mode(mode) 
+    validate_mode(mode)
+    if top_n <= 0:
+        raise ValueError("top_n must be positive")

@@ -139,3 +139,32 @@ def test_ensure_fresh_data_error_handling(mock_advisor, mock_db):
     # which will then fail with Fetch error
     with pytest.raises(Exception, match="Fetch error"):
         ensure_fresh_data(mock_advisor, mock_db)
+
+
+def test_concurrent_ensure_fresh_data_refreshes_once():
+    """Concurrent callers on a stale cache must not each refresh (duplicated rows)."""
+    import threading
+    import time
+    from spot_optimizer.storage_engine.duckdb_storage_engine import DuckDBStorage
+
+    db = DuckDBStorage()  # in-memory
+    db.connect()
+    advisor = Mock()
+
+    def slow_fetch():
+        time.sleep(0.2)  # widen the race window
+        return {
+            "global_rate": "0.1",
+            "instance_types": {"m5.xlarge": {"cores": 4, "ram_gb": 16.0}},
+            "ranges": [{"index": 0, "label": "<5%", "dots": 0, "max": 5}],
+            "spot_advisor": {"us-west-2": {"Linux": {"m5.xlarge": {"s": 70, "r": 0}}}},
+        }
+
+    advisor.fetch_data.side_effect = slow_fetch
+    threads = [threading.Thread(target=ensure_fresh_data, args=(advisor, db)) for _ in range(3)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+
+    assert advisor.fetch_data.call_count == 1
+    assert db.query_data("SELECT COUNT(*) n FROM spot_advisor")["n"][0] == 1
+    db.disconnect()

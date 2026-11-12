@@ -101,12 +101,11 @@ def test_optimize_success(optimizer, mock_db, sample_query_result):
         arm_instances=True
     )
     
-    assert result == {
+    best = {
         "instances": {
             "type": "m5.xlarge",
             "count": 2
         },
-        "mode": "balanced",
         "total_cores": 8,
         "total_ram": 32,
         "reliability": {
@@ -114,6 +113,32 @@ def test_optimize_success(optimizer, mock_db, sample_query_result):
             "interruption_rate": 1
         }
     }
+    assert result == {**best, "mode": "balanced", "candidates": [best]}
+
+def test_optimize_returns_ranked_candidates(optimizer, mock_db):
+    """All query rows become candidates in rank order; top-level is the first."""
+    mock_db.query_data.return_value = pd.DataFrame({
+        'instance_type': ['m5.xlarge', 'm6i.xlarge', 'r5.large'],
+        'cores': [4, 4, 2],
+        'ram_gb': [16, 16, 16],
+        'spot_score': [75, 70, 60],
+        'interruption_rate': [0, 0, 1],
+        'instances_needed': [2, 2, 4],
+        'total_cores': [8, 8, 8],
+        'total_memory': [32, 32, 64],
+        'cpu_waste_pct': [0, 0, 0],
+        'memory_waste_pct': [0, 0, 100]
+    })
+    result = optimizer.optimize(cores=8, memory=32, top_n=3)
+
+    assert [c["instances"]["type"] for c in result["candidates"]] == ['m5.xlarge', 'm6i.xlarge', 'r5.large']
+    assert result["instances"] == result["candidates"][0]["instances"]
+    assert result["candidates"][2]["instances"]["count"] == 4
+    assert optimizer.query_builder.build_query_parameters.call_args.kwargs["top_n"] == 3
+
+def test_optimize_rejects_non_positive_top_n(optimizer):
+    with pytest.raises(ValueError, match="top_n must be positive"):
+        optimizer.optimize(cores=8, memory=32, top_n=0)
 
 def test_optimize_no_results(optimizer, mock_db):
     """Test optimization when no suitable instances are found."""
