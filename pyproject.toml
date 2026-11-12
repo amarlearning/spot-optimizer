@@ -1,46 +1,58 @@
-[tool.poetry]
+[project]
 name = "spot-optimizer"
 version = "1.2.13"
 description = "AWS EC2 spot instance optimizer"
-authors = ["Amar Prakash <amar.om1994@gmail.com>"]
+authors = [{ name = "Amar Prakash", email = "amar.om1994@gmail.com" }]
 readme = "README.md"
-repository = "https://github.com/amarlearning/spot-optimizer"
 keywords = ["aws", "ec2", "spot", "optimizer"]
-packages = [
-    { include = "spot_optimizer" },
-    { include = "spot_optimizer/resources/*.json" }
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "requests>=2.32.3,<3",
+    "diskcache>=5.6.3,<6",
+    "appdirs>=1.4.4,<2",
+    "duckdb>=1.1.3,<2",
+    "pandas>=2.2.0,<3",
+    "boto3>=1.34.0,<2",
+    "urllib3<2.0.0",  # Required for boto3 compatibility
+    "tqdm>=4.66.1,<5",  # For progress bars
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.11"
-requests = "^2.32.3"
-diskcache = "^5.6.3"
-appdirs = "^1.4.4"
-duckdb = "^1.1.3"
-pandas = "^2.2.0"
-boto3 = "^1.34.0"
-urllib3 = "<2.0.0"  # Required for boto3 compatibility
-tqdm = "^4.66.1"  # For progress bars
+[project.urls]
+Repository = "https://github.com/amarlearning/spot-optimizer"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.4"
-pytest-cov = "^4.1.0"
-pytest-timeout = "^2.3.1"  # For test timeout handling
-pytest-xdist = "^3.6.0"  # For parallel test execution
-psutil = "^6.1.0"  # For memory monitoring in performance tests (compatible with safety)
-safety = "^3.2.7"  # For security scanning
-bandit = "^1.7.5"  # For security linting
+[project.scripts]
+spot-optimizer = "spot_optimizer.cli:main"
 
-[tool.poetry.group.types.dependencies]
-types-requests = "^2.31.0"  # Using an older version for compatibility
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4,<9",
+    "pytest-cov>=4.1.0,<5",
+    "pytest-timeout>=2.3.1,<3",  # For test timeout handling
+    "pytest-xdist>=3.6.0,<4",  # For parallel test execution
+    "psutil>=6.1.0,<7",  # For memory monitoring in performance tests
+    "safety>=3.2.7,<4",  # For security scanning
+    "bandit>=1.7.5,<2",  # For security linting
+]
+types = [
+    "types-requests>=2.31.0,<3",
+]
 
+[tool.uv]
+default-groups = "all"  # Match Poetry: install every group by default
+
+[tool.uv.build-backend]
+module-root = ""  # Flat layout: spot_optimizer/ at the repo root
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
-spot-optimizer = "spot_optimizer.cli:main"
+requires = ["uv_build>=0.10.2,<0.11"]
+build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

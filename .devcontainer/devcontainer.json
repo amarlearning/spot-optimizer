@@ -36,7 +36,7 @@
             }
         }
     },
-    "postCreateCommand": "curl -sSL https://install.python-poetry.org | python3 - && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.bashrc && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.zshrc && make install",
+    "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.bashrc && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.zshrc && make install",
     "remoteUser": "vscode",
     "mounts": [
         "source=${localWorkspaceFolder}/.git,target=/workspaces/${localWorkspaceFolderBasename}/.git,type=bind,consistency=cached"

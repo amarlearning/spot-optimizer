@@ -17,14 +17,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv and Python 3.12
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.12'
-          
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-        
+          enable-cache: true
+
       - name: Install dependencies
         run: make install
         
@@ -33,5 +31,5 @@ jobs:
         
       - name: Publish to PyPI
         env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: poetry publish
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: uv publish

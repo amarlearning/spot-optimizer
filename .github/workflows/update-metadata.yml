@@ -15,14 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv and Python 3.12
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.12'
-          
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-        
+          enable-cache: true
+
       - name: Install dependencies
         run: |
           make install
@@ -30,7 +28,7 @@ jobs:
       - name: Generate new metadata
         run: |
           echo "Running metadata generation..."
-          poetry run python scripts/generate_instance_metadata.py
+          uv run python scripts/generate_instance_metadata.py
           echo "Metadata generation completed"
         
       - name: Check for changes
@@ -56,19 +54,19 @@ jobs:
         if: steps.check_changes.outputs.changes == 'true'
         run: |
           # Get current version from pyproject.toml
-          CURRENT_VERSION=$(poetry version -s)
+          CURRENT_VERSION=$(uv version --short)
           echo "Current version: $CURRENT_VERSION"
           # Bump patch version (not minor for metadata updates)
-          poetry version patch
+          uv version --bump patch
           # Get new version
-          NEW_VERSION=$(poetry version -s)
+          NEW_VERSION=$(uv version --short)
           echo "New version: $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
       - name: Commit changes
         if: steps.check_changes.outputs.changes == 'true'
         run: |
-          git add spot_optimizer/resources/instance_metadata.json pyproject.toml poetry.lock
+          git add spot_optimizer/resources/instance_metadata.json pyproject.toml uv.lock
           git commit -m "chore: update instance metadata and bump version to ${{ env.NEW_VERSION }}"
           
       - name: Create and push tag

@@ -12,7 +12,6 @@ on:
   workflow_call:  # Allow this workflow to be called by other workflows
 
 env:
-  POETRY_VERSION: "2.2.1"
   PYTHON_DEFAULT_VERSION: "3.11"
 
 jobs:
@@ -26,29 +25,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Install uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
-          
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: ${{ env.POETRY_VERSION }}
-        
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          
-      - name: Cache poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ matrix.python-version }}-
-        
+          enable-cache: true
+
       - name: Install the project dependencies
         run: make install
         
@@ -82,29 +64,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Python ${{ matrix.test-config.python-version }}
-        uses: actions/setup-python@v4
+      - name: Install uv and Python ${{ matrix.test-config.python-version }}
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.test-config.python-version }}
-          
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: ${{ env.POETRY_VERSION }}
-        
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          
-      - name: Cache poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ matrix.test-config.python-version }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ matrix.test-config.python-version }}-
-        
+          enable-cache: true
+
       - name: Install the project dependencies
         run: make install
         
@@ -147,29 +112,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Python
-        uses: actions/setup-python@v4
+      - name: Install uv and Python ${{ env.PYTHON_DEFAULT_VERSION }}
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-          
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: ${{ env.POETRY_VERSION }}
-        
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          
-      - name: Cache poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ env.PYTHON_DEFAULT_VERSION }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_DEFAULT_VERSION }}-
-        
+          enable-cache: true
+
       - name: Install the project dependencies
         run: make install
         
@@ -188,7 +136,7 @@ jobs:
         run: |
           echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
           if [ -f .coverage ]; then
-            poetry run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || echo "Coverage report generation failed" >> $GITHUB_STEP_SUMMARY
+            uv run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || echo "Coverage report generation failed" >> $GITHUB_STEP_SUMMARY
           else
             echo "No coverage data found" >> $GITHUB_STEP_SUMMARY
           fi
@@ -202,21 +150,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Python
-        uses: actions/setup-python@v4
+      - name: Install uv and Python ${{ env.PYTHON_DEFAULT_VERSION }}
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-          
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: ${{ env.POETRY_VERSION }}
-        
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          
+          enable-cache: true
+
       - name: Install the project dependencies
         run: make install
         
@@ -290,24 +229,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Python
-        uses: actions/setup-python@v4
+      - name: Install uv and Python ${{ env.PYTHON_DEFAULT_VERSION }}
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-          
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: ${{ env.POETRY_VERSION }}
-        
+          enable-cache: true
+
       - name: Install dependencies
         run: make install
         
       - name: Run security scan
         run: |
-          poetry run pip install safety bandit
-          poetry run safety check --json || true
-          poetry run bandit -r spot_optimizer/ -f json || true
+          uv run safety check --json || true
+          uv run bandit -r spot_optimizer/ -f json || true
         continue-on-error: true  # Don't fail CI for security issues, just report
         
       - name: Upload security scan results
@@ -329,16 +263,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Python
-        uses: actions/setup-python@v4
+      - name: Install uv and Python ${{ env.PYTHON_DEFAULT_VERSION }}
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-          
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: ${{ env.POETRY_VERSION }}
-        
+          enable-cache: true
+
       - name: Install dependencies
         run: make install
         
@@ -348,13 +278,12 @@ jobs:
       - name: Verify package contents
         run: |
           # Create a fresh virtual environment to test package installation
-          python -m venv test_env
-          source test_env/bin/activate
+          uv venv test_env
           # Install the wheel package
-          pip install dist/*.whl
+          uv pip install --python test_env dist/*.whl
           # Verify the package can be imported and used
-          python -c "import spot_optimizer; print('Package installed successfully')"
-          python -c "from spot_optimizer import optimize, Mode; print('Imports working')"
+          test_env/bin/python -c "import spot_optimizer; print('Package installed successfully')"
+          test_env/bin/python -c "from spot_optimizer import optimize, Mode; print('Imports working')"
         
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

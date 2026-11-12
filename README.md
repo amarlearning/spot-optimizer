@@ -113,6 +113,8 @@ pip install spot-optimizer
 ```
 
 ### For Development
+Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+
 ```bash
 # Clone the repository
 git clone git@github.com:amarlearning/spot-optimizer.git

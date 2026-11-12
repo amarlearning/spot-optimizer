@@ -1,8 +1,8 @@
 .PHONY: clean test coverage lint format install build publish help
 
 # Variables
-PYTHON = poetry run python
-PYTEST = poetry run pytest
+PYTHON = uv run python
+PYTEST = uv run pytest
 COVERAGE_THRESHOLD = 97
 PACKAGE_NAME = spot_optimizer
 
@@ -15,8 +15,8 @@ help:  ## Show this help message
 	@echo 'Targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-install:  ## Install dependencies using poetry
-	poetry install
+install:  ## Install dependencies using uv
+	uv sync
 
 clean:  ## Remove all build, test, and coverage artifacts
 	rm -rf .venv-*/
@@ -55,8 +55,8 @@ test-quick:  ## Run quick test suite (unit tests only)
 	$(PYTEST) tests/ -m "not integration" -x --tb=short
 
 build: clean coverage  ## Build package
-	poetry build
+	uv build
 
 publish: build  ## Publish package to PyPI
-	python scripts/generate_instance_metadata.py
-	poetry publish 
+	$(PYTHON) scripts/generate_instance_metadata.py
+	uv publish
