@@ -9,7 +9,7 @@ This directory contains comprehensive tests for the spot-optimizer package with 
 - Run with: `make test` or `make test-quick`
 - Coverage threshold: 94%
 - Fast execution, mocked dependencies
-- Matrix tested on Python 3.9-3.12
+- Matrix tested on Python 3.11-3.14
 
 ### Integration Tests
 - `test_integration.py` - Comprehensive end-to-end testing
@@ -82,7 +82,7 @@ make test-performance
 ## CI/CD Integration
 
 ### GitHub Actions Workflow
-- **Unit Tests**: Matrix testing on Python 3.9-3.12
+- **Unit Tests**: Matrix testing on Python 3.11-3.14
 - **Integration Tests**: Multi-configuration testing with timeout protection
 - **Coverage Reports**: Automated coverage reporting with 94% threshold
 - **Scheduled Tests**: Daily integration tests to catch AWS API changes
