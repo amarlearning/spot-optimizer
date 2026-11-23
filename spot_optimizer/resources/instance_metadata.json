@@ -7043,6 +7043,30 @@
     "storage": "ebs",
     "vcpu": 2
   },
+  "t9g.medium": {
+    "arch": "arm64",
+    "memory": 4.0,
+    "storage": "ebs",
+    "vcpu": 2
+  },
+  "t9g.micro": {
+    "arch": "arm64",
+    "memory": 1.0,
+    "storage": "ebs",
+    "vcpu": 2
+  },
+  "t9g.nano": {
+    "arch": "arm64",
+    "memory": 0.5,
+    "storage": "ebs",
+    "vcpu": 2
+  },
+  "t9g.small": {
+    "arch": "arm64",
+    "memory": 2.0,
+    "storage": "ebs",
+    "vcpu": 2
+  },
   "trn1.2xlarge": {
     "arch": "x86_64",
     "memory": 32.0,
